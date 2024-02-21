@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r include=FALSE}
+# Install DESeq2 if not already installed
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.18")
+BiocManager::install("DESeq2")
+BiocManager::install('EnhancedVolcano')
+BiocManager::install('org.Hs.eg.db')
+BiocManager::install('apeglm')
+BiocManager::install('fgsea')
+```
+
+
+```{r include=FALSE}
+library(DESeq2)
+library(EnhancedVolcano)
+library(org.Hs.eg.db)
+library(dbplyr)
+library(ggplot2)
+library(apeglm)
+library(enrichR)
+library(fgsea)
+library(tidyverse)
+library(AnnotationDbi)
+```
+
+
+```{r}
+# Assuming 'counts_matrix' is your count matrix with genes as rows and samples as columns
+# Rows should be gene IDs, and columns should be sample IDs
+counts_matrix <- read.csv("/Users/carternorton/Desktop/RCC/xena/TCGA-KIRC.htseq_counts.tsv", header = TRUE, sep="\t")
+counts_matrix$Ensembl_ID <- sub("\\..*", "", counts_matrix$Ensembl_ID)
+```
+
+
+```{r}
+#We need to convert ENSG ids to gene symbols
+# https://www.reddit.com/r/bioinformatics/comments/cc5db6/help_with_converting_ensembl_id_to_gene_name/
+ann = AnnotationDbi::select(org.Hs.eg.db, keys = counts_matrix$Ensembl_ID, keytype = 'ENSEMBL', columns = 'SYMBOL')
+
+#Unfortunately, some ENSEMBL ID's map to multiple gene symbols (about 62 duplicates), so we will need to keep the first
+ann = ann[!duplicated(ann$ENSEMBL),]
+
+#Now, let's fill in any na values in the 
+ann$SYMBOL = ifelse(is.na(ann$SYMBOL), ann$ENSEMBL, ann$SYMBOL)
+
+#Let's drop repeats again
+ann = ann[!duplicated(ann$SYMBOL),]
+```
+
+```{r}
+counts_matrix = merge.data.frame(ann, counts_matrix, by.x = "ENSEMBL", by.y = "Ensembl_ID")
+rownames(counts_matrix) = counts_matrix$SYMBOL
+counts_matrix = subset(counts_matrix, select = -c(SYMBOL, ENSEMBL))
+```
+
+```{r}
+#Let's replace all "." in column names with "-"
+colnames(counts_matrix) <- gsub("\\.", "-", colnames(counts_matrix))
+```
+
+```{r}
+#Let's select for just 'VHL"
+vhl = counts_matrix["VHL",]
+```
+
+
+```{r}
+write_csv(counts_matrix, "/Users/carternorton/Desktop/RCC/xena/RNASeq_gene_symbols.csv")
+write_csv(vhl,  "/Users/carternorton/Desktop/RCC/xena/VHL.csv")
+```
+
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
