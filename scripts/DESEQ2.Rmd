@@ -43,6 +43,21 @@ col_data <- read.csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv", row.names =
 ```
 
 ```{r}
+col_data = col_data %>% filter(bmi %in% c("obese", "normal"))
+counts_matrix <- counts_matrix %>%
+  select(c(all_of(rownames(col_data)),"Ensembl_ID"))
+
+
+
+# Convert to factor if not already
+col_data$bmi <- factor(col_data$bmi)
+
+# Relevel the factor
+col_data$bmi <- relevel(col_data$bmi, ref = "normal")
+```
+
+
+```{r}
 #Let's normalize the ages in the col_data
 col_data$Age_scaled = (col_data$Age - mean(col_data$Age)) / sd(col_data$Age)
 ```
@@ -66,6 +81,8 @@ ann = ann[!duplicated(ann$SYMBOL),]
 counts_matrix = merge.data.frame(ann, counts_matrix, by.x = "ENSEMBL", by.y = "Ensembl_ID")
 rownames(counts_matrix) = counts_matrix$SYMBOL
 counts_matrix = subset(counts_matrix, select = -c(SYMBOL, ENSEMBL))
+
+
 ```
 
 
@@ -73,19 +90,18 @@ counts_matrix = subset(counts_matrix, select = -c(SYMBOL, ENSEMBL))
 ```{r include=FALSE}
 
 # Create DESeqDataSet object
-dds <- DESeqDataSetFromMatrix(countData = counts_matrix,
+dds_set <- DESeqDataSetFromMatrix(countData = counts_matrix,
                               colData = col_data,
                               design = ~bmi + TC + Age_scaled) #Age may need to be centered and scaled to reduce collinearity
 #This takes about two minutes
-dds <- DESeq(dds)
+dds <- DESeq(dds_set)
 
 ```
 
 ```{r}
 # Compare conditions of interest (e.g., treated vs. control)
 result <- results(dds, contrast = c("bmi", "obese", "normal"))
-res <- lfcShrink(dds,
-    contrast = c('bmi','obese','normal'), res=result, type = 'normal')
+res <- lfcShrink(dds, contrast = c("bmi","obese", "normal"), res=result, type = 'normal')
 ```
 
 ```{r}
@@ -95,6 +111,9 @@ save(res, file="/Users/carternorton/Desktop/RCC/Objects/dds_result.RData")
 
 ```{r}
 load("/Users/carternorton/Desktop/RCC/Objects/dds_result.RData")
+```
+
+```{r}
 res_tibble = as_tibble(res)
 row.names(res_tibble) = rownames(res)
 res_tibble$SYMBOL = rownames(res)
@@ -113,7 +132,17 @@ dev.off()
 # Volcano Plot
 # https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
 
-EnhancedVolcano(res, lab = rownames(res), x = 'log2FoldChange', y = 'pvalue', pCutoff = 10e-10, FCcutoff = 1, title= "Obese versus Normal")+ ggplot2::coord_cartesian(xlim=c(-6, 6), ylim=c(0,50)) 
+EnhancedVolcano(res, 
+                lab = rownames(res), 
+                x = 'log2FoldChange', 
+                y = 'padj', 
+                pCutoff = 10e-6, 
+                subtitle = "",
+                labFace = 'bold',
+                FCcutoff = 1.5,
+                legendLabels=c('Not sig.','Not sig.','Not sig.','p-value & log2 FC'),
+                col=c('grey','grey','grey','red3'))  #+ ggplot2::coord_cartesian(xlim=c(-3, 3), ylim=c(0,30)) 
+
 ggsave("/Users/carternorton/Desktop/RCC/Plots/Volcano_WithTC.png", device = "png", height = 8)
 
 # Heatmap of top differentially expressed genes
@@ -128,7 +157,9 @@ plotCounts(dds, gene = "HMGA2" , intgroup = "bmi")
 ```{r}
 #Let's use ENRICHR
 dbs <- c("MSigDB_Hallmark_2020")
+#Significant genes need to be selected for before running "res" 
 enriched = enrichr(rownames(res), dbs)
+
 
 ```
 
@@ -145,54 +176,127 @@ res2 <- res_tibble %>%
   na.omit() %>% 
   distinct() %>% 
   group_by(SYMBOL) %>% 
-  summarize(stat=mean(stat))
+  summarize(stat=mean(stat))%>%
+  arrange(desc(stat))
+
+
+res_up <- res2 %>% filter(stat > 0)
+res_down <- res2 %>% filter(stat < 0)
 
 ranks <- deframe(res2)
+ranks_up <- deframe(res_up)
+ranks_down <- deframe(res_down)
 
 ```
 
 ```{r}
 
 # Load the pathways into a named list
+set.seed(42)
 pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
-fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nPermSimple=5000)
-#Geneset instead of permutation 
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks_up, nPerm=5000, minSize=10, maxSize=500)
 
-fgseaResTidy <- fgseaRes %>%
+#Geneset instead of permutation 
+fgseaResTidy_up <- fgseaRes %>%
   as_tibble() %>%
   arrange(desc(NES)) %>%
   filter(padj < .01) %>%
   mutate(log_padj = -log10(padj),
          pathway = str_remove(pathway, "HALLMARK_"))
 
+pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks_down, nPerm=5000, minSize=10, maxSize=500)
 
-p = ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=log_padj)) +
+#Geneset instead of permutation 
+fgseaResTidy_down <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES)) %>%
+  filter(padj < .01) %>%
+  mutate(log_padj = -log10(padj),
+         pathway = str_remove(pathway, "HALLMARK_"))
+
+# Combine up- and down-regulated results before plotting
+combined_fgseaResTidy <- bind_rows(
+  mutate(fgseaResTidy_up, Direction = "Up"),
+  mutate(fgseaResTidy_down, Direction = "Down")
+) %>%
+  arrange(padj) %>%          
+  distinct(pathway, .keep_all = TRUE) %>% #If pathways are both up/down, then keep the one with the lowest p-value
+  arrange(desc(NES))
+
+
+
+# Plot the combined results
+p <- ggplot(combined_fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
+  geom_col() +
   coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Obese vs Normal - Hallmark pathways ",
-      fill = "-Log₁₀P") +
+  labs(x = "Pathway", y = "Normalized Enrichment Score") +
   theme_bw() +
-  theme(plot.title = element_text(face = "bold"))
+  theme(legend.position="none")
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/HallMarkGSEA.png", p, width = 10, height = 6)
+ggsave("/Users/carternorton/Desktop/RCC/Plots/HallMarkGSEA_Separate.png", p, width = 10, height = 6, dpi=300)
 
 print(p)
 ```
 
 
 
+
+```{r}
+
+# Load the pathways into a named list
+set.seed(42)
+pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nPerm=1000, minSize=10, maxSize=500)
+
+#Geneset instead of permutation 
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES)) %>%
+  filter(padj < .05) %>%
+  mutate(log_padj = -log10(padj),
+         pathway = str_remove(pathway, "HALLMARK_"))
+
+# Plot the combined results
+p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Pathway", y = "Normalized Enrichment Score") +
+  theme_bw() +
+  theme(legend.position="none")
+
+ggsave("/Users/carternorton/Desktop/RCC/Plots/HallMarkGSEA_Together.png", p, width = 6, height = 6, dpi=300)
+
+print(p)
+```
+```{r}
+#Let's look at the leading edge (those genes most responsible for NES)
+#https://www.gsea-msigdb.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading
+
+
+#My apologies, you originally requested the solution in R. Here's the code in R to achieve the same result:
+
+leading_genes <- fgseaResTidy %>%
+  mutate(leadingEdge = lapply(leadingEdge, head, n = 5)) %>%
+  mutate(leadingEdge = sapply(leadingEdge, toString)) %>%
+  select(pathway, leadingEdge) %>%
+  rename("Driving Genes" = "leadingEdge")
+
+write.csv(leading_genes, "/Users/carternorton/Desktop/RCC/result_data/leading_genes.csv")
+```
+
+
 ```{r}
 # Load the pathways into a named list
 pathways.kegg <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
 
-fgseaRes <- fgsea(pathways=pathways.kegg, stats=ranks, nPermSimple=5000)
+fgseaRes <- fgsea(pathways=pathways.kegg, stats=ranks, nPerm=5000)
 #minSize = 10, maxSize=500
 
 fgseaResTidy <- fgseaRes %>%
   as_tibble() %>%
   arrange(desc(NES)) %>%
-  filter(padj < 0.01) %>%
+  filter(padj < 0.05) %>%
   mutate(log_padj = -log10(padj),
          pathway = str_remove(pathway, "KEGG_")) %>%
   filter(grepl("(?i)metabolism|biosynthesis", pathway))
