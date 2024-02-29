@@ -37,9 +37,9 @@ library(AnnotationDbi)
 ```{r}
 # Assuming 'counts_matrix' is your count matrix with genes as rows and samples as columns
 # Rows should be gene IDs, and columns should be sample IDs
-counts_matrix <- read.csv("/Users/carternorton/Desktop/RCC/KIRC_mRNA_BMI.csv", header = TRUE)
+counts_matrix <- read.csv("", header = TRUE)
 counts_matrix$Ensembl_ID <- sub("\\..*", "", counts_matrix$Ensembl_ID)
-col_data <- read.csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv", row.names = 1)
+col_data <- read.csv("", row.names = 1)
 ```
 
 ```{r}
@@ -106,18 +106,18 @@ res <- lfcShrink(dds, contrast = c("bmi","obese", "normal"), res=result, type = 
 
 ```{r}
 #Save the Result
-save(res, file="/Users/carternorton/Desktop/RCC/Objects/dds_result.RData")
+save(res, file="dds_result.RData")
 ```
 
 ```{r}
-load("/Users/carternorton/Desktop/RCC/Objects/dds_result.RData")
+load("dds_result.RData")
 ```
 
 ```{r}
 res_tibble = as_tibble(res)
 row.names(res_tibble) = rownames(res)
 res_tibble$SYMBOL = rownames(res)
-write_csv(res_tibble, "/Users/carternorton/Desktop/RCC/result_data/deSeq2shrunk.csv")
+write_csv(res_tibble, "deSeq2shrunk.csv")
 ```
 
 
@@ -143,7 +143,7 @@ EnhancedVolcano(res,
                 legendLabels=c('Not sig.','Not sig.','Not sig.','p-value & log2 FC'),
                 col=c('grey','grey','grey','red3'))  #+ ggplot2::coord_cartesian(xlim=c(-3, 3), ylim=c(0,30)) 
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/Volcano_WithTC.png", device = "png", height = 8)
+ggsave("Volcano_WithTC.png", device = "png", height = 8)
 
 # Heatmap of top differentially expressed genes
 # Extract significant differentially expressed genes
@@ -193,7 +193,7 @@ ranks_down <- deframe(res_down)
 
 # Load the pathways into a named list
 set.seed(42)
-pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+pathways.hallmark <- gmtPathways("h.all.v2023.2.Hs.symbols.gmt")
 fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks_up, nPerm=5000, minSize=10, maxSize=500)
 
 #Geneset instead of permutation 
@@ -204,7 +204,7 @@ fgseaResTidy_up <- fgseaRes %>%
   mutate(log_padj = -log10(padj),
          pathway = str_remove(pathway, "HALLMARK_"))
 
-pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+pathways.hallmark <- gmtPathways("h.all.v2023.2.Hs.symbols.gmt")
 fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks_down, nPerm=5000, minSize=10, maxSize=500)
 
 #Geneset instead of permutation 
@@ -234,7 +234,7 @@ p <- ggplot(combined_fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightco
   theme_bw() +
   theme(legend.position="none")
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/HallMarkGSEA_Separate.png", p, width = 10, height = 6, dpi=300)
+ggsave("HallMarkGSEA_Separate.png", p, width = 10, height = 6, dpi=300)
 
 print(p)
 ```
@@ -246,7 +246,7 @@ print(p)
 
 # Load the pathways into a named list
 set.seed(42)
-pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+pathways.hallmark <- gmtPathways("h.all.v2023.2.Hs.symbols.gmt")
 fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nPerm=1000, minSize=10, maxSize=500)
 
 #Geneset instead of permutation 
@@ -265,7 +265,7 @@ p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
   theme_bw() +
   theme(legend.position="none")
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/HallMarkGSEA_Together.png", p, width = 6, height = 6, dpi=300)
+ggsave("HallMarkGSEA_Together.png", p, width = 6, height = 6, dpi=300)
 
 print(p)
 ```
@@ -273,22 +273,19 @@ print(p)
 #Let's look at the leading edge (those genes most responsible for NES)
 #https://www.gsea-msigdb.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading
 
-
-#My apologies, you originally requested the solution in R. Here's the code in R to achieve the same result:
-
 leading_genes <- fgseaResTidy %>%
   mutate(leadingEdge = lapply(leadingEdge, head, n = 5)) %>%
   mutate(leadingEdge = sapply(leadingEdge, toString)) %>%
   select(pathway, leadingEdge) %>%
   rename("Driving Genes" = "leadingEdge")
 
-write.csv(leading_genes, "/Users/carternorton/Desktop/RCC/result_data/leading_genes.csv")
+write.csv(leading_genes, "leading_genes.csv")
 ```
 
 
 ```{r}
 # Load the pathways into a named list
-pathways.kegg <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
+pathways.kegg <- gmtPathways("c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
 
 fgseaRes <- fgsea(pathways=pathways.kegg, stats=ranks, nPerm=5000)
 #minSize = 10, maxSize=500
@@ -310,7 +307,7 @@ p = ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
        fill = "-Log₁₀P") + 
   theme_bw()
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/KEGG_GSEA.png", p, width = 10, height = 6)
+ggsave("KEGG_GSEA.png", p, width = 10, height = 6)
 
 print(p)
 ```
