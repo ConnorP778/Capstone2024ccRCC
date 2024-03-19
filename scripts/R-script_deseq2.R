@@ -1,0 +1,120 @@
+# Package names
+packages <- c("dplyr", "tidyverse", "BiocManager", "DESeq2")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Read data
+data <- read.table(file = "TCGA-KIRC.mirna.tsv", header = TRUE)
+miRNA_ID = data$miRNA_ID
+# Clean data
+data <- select(data, -contains(".11"), -miRNA_ID)
+
+# Read clinical data and preprocess
+clinical <- read.table(file = "TCGA_Clinical_Data_with_BMI_Classification.tsv", sep = "\t", header = TRUE, fill = TRUE)
+
+# Mutate and preprocess clinical data
+clinical <- mutate(clinical, BMI.Classification = factor(BMI.Classification)) %>%
+  mutate(bmiGroup = fct_recode(BMI.Classification, "Normal" = "NW", "Obese" = "OB I", "Obese" = "OB II", "Obese" = "OB III", "Overweight" = "OW")) %>%
+  select(TCGA.Sample.Code, bmiGroup) %>%
+  filter(!is.na(bmiGroup))
+
+# Process exprBT
+exprBT <- data
+colnames(exprBT) <- substr(colnames(exprBT), 1, 12) %>% str_replace_all("\\.", "-")
+rownames(exprBT) <- miRNA_ID
+exprBT <- round((2^exprBT-1),0)
+exprBT <- exprBT[, !duplicated(names(exprBT))]
+
+# Match columns and rename
+for (col_name in colnames(exprBT)) {
+  if (col_name %in% clinical$TCGA.Sample.Code) {
+    obesity <- clinical[clinical$TCGA.Sample.Code == col_name, "bmiGroup"]
+    if (obesity %in% c("Normal", "Obese")) {
+      new_col_name <- paste(col_name, obesity, sep = "_")
+      colnames(exprBT)[colnames(exprBT) == col_name] <- new_col_name
+    } else {
+      exprBT <- select(exprBT, -col_name)
+    }
+  } else {
+    exprBT <- select(exprBT, -col_name)
+  }
+}
+
+# Create metadata
+meta <- as.tibble(t(exprBT))
+meta$rowNames <- row.names(t(exprBT))
+
+# Separate rowNames into ID and bmiGroup columns
+meta <- separate(meta, rowNames, into = c("ID", "bmiGroup"), sep = "_", remove = FALSE) %>%
+  select(-rowNames)
+# Remove the original rowNames column
+
+## Create DESeq object
+dds <- DESeq2::DESeqDataSetFromMatrix(countData = exprBT, colData = meta, design = ~ bmiGroup)
+dds <- DESeq2::DESeq(dds)
+dds <- dds[rowSums(counts(dds)) > 100, ]
+
+# Extract results from DESeq analysis
+res1 <- as.data.frame(DESeq2::results(dds))
+
+#### NOW FOR NORMAL AND OVERWEIGHT
+# Process exprBT
+exprBT <- data
+colnames(exprBT) <- substr(colnames(exprBT), 1, 12) %>% str_replace_all("\\.", "-")
+rownames(exprBT) <- miRNA_ID
+exprBT <- round((2^exprBT-1),0)
+exprBT <- exprBT[, !duplicated(names(exprBT))]
+
+# Match columns and rename
+for (col_name in colnames(exprBT)) {
+  if (col_name %in% clinical$TCGA.Sample.Code) {
+    obesity <- clinical[clinical$TCGA.Sample.Code == col_name, "bmiGroup"]
+    if (obesity %in% c("Normal", "Overweight")) {
+      new_col_name <- paste(col_name, obesity, sep = "_")
+      colnames(exprBT)[colnames(exprBT) == col_name] <- new_col_name
+    } else {
+      exprBT <- select(exprBT, -col_name)
+    }
+  } else {
+    exprBT <- select(exprBT, -col_name)
+  }
+}
+
+# Create metadata
+meta1 <- as.tibble(t(exprBT))
+meta1$rowNames <- row.names(t(exprBT))
+
+# Separate rowNames into ID and bmiGroup columns
+meta1 <- separate(meta1, rowNames, into = c("ID", "bmiGroup"), sep = "_", remove = FALSE) %>%
+  select(-rowNames)  # Remove the original rowNames column
+
+## Create DESeq object
+dds <- DESeq2::DESeqDataSetFromMatrix(countData = exprBT, colData = meta1, design = ~ bmiGroup)
+dds <- DESeq2::DESeq(dds)
+dds <- dds[rowSums(counts(dds)) > 100, ]
+
+
+# Extract results from DESeq analysis
+res2 <- as.data.frame(DESeq2::results(dds))
+deseq2.sig.res2 <- (res2[!is.na(res2$padj) & res2$padj <= 0.1, ])
+
+print(deseq2.sig.res2)
+
+res1$BMI = "Obese"
+res2$BMI = "Overweight"
+summary(res2)
+res = rbind(res1, res2)
+
+# Create a volcano plot
+volcano_plot <- ggplot(res, aes(x = log2FoldChange, y = -log10(pvalue))) +
+  geom_point(size = 1.5, aes(color = ifelse(padj < 0.1 & abs(log2FoldChange) > 1, "Significant", "Non-significant"))) +
+  scale_color_manual(values = c("black", "red"), breaks = c("Non-significant", "Significant"), name = "Significance") +  
+  facet_wrap(~BMI) +
+  theme_bw() +
+  labs(x = ~Log[2]*" Fold Change", y = ~-Log[10]*"(p-value)", title = NULL) #+
+
+print(volcano_plot)
