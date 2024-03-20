@@ -23,6 +23,7 @@ library(limma)
 library(fgsea)
 library(org.Hs.eg.db)
 library(minfi)
+library(pbmcapply)
 
 ```
 
@@ -104,27 +105,26 @@ col_data <- col_data[rownames(col_data) %in% merged_df$ID, ]
 # Separate data into high and low BMI groups
 merged_df$sex = col_data$TC
 merged_df$age = col_data$age_scaled
-high_bmi_data <- merged_df[merged_df$bmi == "obese", ]
-low_bmi_data <- merged_df[merged_df$bmi == "normal", ]
+#high_bmi_data <- merged_df[merged_df$bmi == "obese", ]
+#low_bmi_data <- merged_df[merged_df$bmi == "normal", ]
 ```
 
 ```{r}
 #Let's get a list of all colnames that include cg
 cgs <- grep("cg", colnames(merged_df), value = TRUE)
-cgs <- cgs[1:10]
 
 # Perform differential methylation analysis for each CpG site in parallel (~30 minutes)
-results <- mclapply(cgs, function(cpg_site) {
+results <- pbmclapply(cgs, function(cpg_site) {
   # Extract beta values for the current CpG site
   cpg_values <- merged_df[, cpg_site]
 
   # Split data into features (beta values) and target (BMI)
   X <- cpg_values
-  y <- merged_df$bmi
+  #y <- merged_df$bmi
   
   # Create a design matrix including "sex" and "age"
-  #design_formula <- as.formula(paste("~ sex + age + y"))
-  design_formula <- as.formula(paste("~y"))
+  design_formula <- as.formula(paste("~bmi + sex + age"))
+  #design_formula <- as.formula(paste("~y"))
 
   # Create a design matrix
   design_matrix <- model.matrix(design_formula, data = merged_df)
@@ -141,7 +141,7 @@ results <- mclapply(cgs, function(cpg_site) {
     F_Statistic = fit$F.p.value,
     P_Value = fit$p.value
   )
-})
+}, mc.cores = 6)
 
 
 # Combine the results from all parallel processes
@@ -150,7 +150,7 @@ results <- do.call(rbind, results)
 
 ```{r}
 #Save results from differential methylation analysis
-#fwrite(results, "/Users/carternorton/Desktop/RCC/result_data/cpg_diff.csv")
+fwrite(results, "/Users/carternorton/Desktop/RCC/result_data/cpg_diff_adj.csv")
 ```
 
 ```{r}
@@ -215,7 +215,9 @@ kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot,
 
 ```
 ```{r}
-write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/pathways_results.csv")
+write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Hallmark_pathways_results.csv")
+write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_pathways_results.csv")
+write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_pathways_results.csv")
 ```
 
 
