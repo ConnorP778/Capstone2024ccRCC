@@ -120,14 +120,17 @@ results <- pbmclapply(cgs, function(cpg_site) {
 
   # Split data into features (beta values) and target (BMI)
   X <- cpg_values
-  #y <- merged_df$bmi
+  bmi <- merged_df$bmi
+  age = merged_df$age
+  sex = merged_df$sex
   
   # Create a design matrix including "sex" and "age"
-  design_formula <- as.formula(paste("~bmi + sex + age"))
-  #design_formula <- as.formula(paste("~y"))
+  #design_formula <- as.formula(paste("~bmi + sex + age"))
+  #design_formula <- as.formula(paste("~bmi"))
 
   # Create a design matrix
-  design_matrix <- model.matrix(design_formula, data = merged_df)
+  #design_matrix <- model.matrix(design_formula, data = merged_df)
+  design_matrix <- model.matrix(~bmi + age + sex)
 
   # Fit a linear model
   fit <- lmFit(X, design_matrix)
@@ -141,11 +144,12 @@ results <- pbmclapply(cgs, function(cpg_site) {
     F_Statistic = fit$F.p.value,
     P_Value = fit$p.value
   )
-}, mc.cores = 6)
+})
 
 
 # Combine the results from all parallel processes
 results <- do.call(rbind, results)
+print("done")
 ```
 
 ```{r}
