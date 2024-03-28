@@ -23,13 +23,13 @@ library(SNFtool)
 
 
 ```{r}
-meth = fread("/Users/carternorton/Desktop/RCC/xena/TCGA-KIRC.methylation450.tsv", sep= "\t")
+meth = fread("TCGA-KIRC.methylation450.tsv", sep= "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
 
 ```{r}
-bmi_data = read_csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv") %>%
+bmi_data = read_csv("RCC/KIRC_BMI.csv") %>%
   rename("name" = "TCGA Sample Code") %>%
   filter(bmi != "underweight")
 ```
@@ -65,7 +65,7 @@ meth <- as.data.frame(meth)
 
 ```{r}
 #Let's load in rna data
-rna = read.csv("/Users/carternorton/Desktop/RCC/KIRC_mRNA_BMI.csv", sep=",")
+rna = read.csv("KIRC_mRNA_BMI.csv", sep=",")
 
 rna <- rna[, common_cols]
 rna <- rna[, colSums(is.na(rna)) == 0]
