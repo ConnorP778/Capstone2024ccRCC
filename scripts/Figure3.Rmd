@@ -17,26 +17,24 @@ library(iClusterPlus)
 library(tidyverse)
 library(lattice)
 library(gplots)
-library(Rtsne)
-library(SNFtool)
 ```
 
 
 ```{r}
-meth = fread("TCGA-KIRC.methylation450.tsv", sep= "\t")
+meth = fread("HumanMethylation450", sep= "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
 
 ```{r}
-bmi_data = read_csv("RCC/KIRC_BMI.csv") %>%
+bmi_data = read_csv("KIRC_BMI.csv") %>%
   rename("name" = "TCGA Sample Code") %>%
   filter(bmi != "underweight")
 ```
 
 ```{r}
-# Step 1: Remove columns that don't end in -01A
-meth <- meth[, grepl("-01A$", colnames(meth))]
+# Step 1: Remove columns that don't end in -01
+meth <- meth[, grepl("-01$", colnames(meth))]
 
 # Step 2: Remove parts of column names after the last "-"
 colnames(meth) <- sub("(.*)-.*", "\\1", colnames(meth))
@@ -66,16 +64,33 @@ meth <- as.data.frame(meth)
 ```{r}
 #Let's load in rna data
 rna = read.csv("KIRC_mRNA_BMI.csv", sep=",")
-
 rna <- rna[, common_cols]
 rna <- rna[, colSums(is.na(rna)) == 0]
 rna = as.data.frame(t(rna))
 ```
+```{r}
+#Load in mirna data
+mirna <- read_tsv("TCGA-KIRC.mirna.tsv")
+
+# Step 1: Remove columns that don't end in -01A
+mirna <- mirna[, grepl("-01A$", colnames(mirna))]
+
+# Step 2: Remove parts of column names after the last "-"
+colnames(mirna) <- sub("(.*)-.*", "\\1", colnames(mirna))
+
+# Step 3: Replace all "-" with "."
+colnames(mirna) <- gsub("-", ".", colnames(mirna))
+
+mirna <- mirna[, colSums(is.na(mirna)) == 0]
+mirna = as.data.frame(t(mirna))
+mirna <- mirna[-c(1), ]
+```
 
 ```{r}
-common_rows = intersect(rownames(rna), rownames(meth))
+common_rows = intersect(intersect(rownames(rna), rownames(meth)), rownames(mirna))
 rna <- rna[common_rows,] %>% na.omit() %>% as.matrix()
 meth <- meth[common_rows,] %>% na.omit() %>% as.matrix()
+mirna <- mirna[common_rows,] %>% na.omit() %>% as.matrix()
 ``` 
 
 ```{r}
@@ -84,30 +99,54 @@ mad <- function(x) {
   median(abs(x - median(x)))
 }
 
-# Select top 5000 features based on MAD for mRNA data
-top_5000_mRNA <- names(sort(apply(rna, 2, mad), decreasing = TRUE)[1:5000])
+# Select top 1881 features based on MAD for mRNA data
+top_5000_mRNA <- names(sort(apply(rna, 2, mad), decreasing = TRUE)[0:1881])
 
-# Select top 5000 features based on MAD for methylation data
-top_5000_meth <- names(sort(apply(meth, 2, mad), decreasing = TRUE)[1:5000])
+# Select top 1881 features based on MAD for methylation data
+top_5000_meth <- names(sort(apply(meth, 2, mad), decreasing = TRUE)[0:1881])
 
+# Select top 1881 features based on MAD for miRNA data
+#top_5000_mirna <- names(sort(apply(mirna, 2, mad), decreasing = TRUE)[0:1881])
+```
+
+
+```{r}
 # Subset datasets with selected features
 rna_selected <- rna[, top_5000_mRNA]
 rna_selected <- log2(rna_selected + 1)
 meth_selected <- meth[, top_5000_meth]
-
+mirna_selected <- mirna
+mirna_selected <- log2(mirna_selected + 1)
+```
+```{r}
 #Make sure these are in the same order
-meth_selected <- meth_selected %>%
-  arrange(match(rownames(.), row.names(rna_selected)))
+meth_selected <- meth_selected[match(row.names(rna_selected), row.names(meth_selected)), ]
+mirna_selected <- mirna[match(row.names(rna_selected), row.names(mirna_selected)), ]
+
+rm(meth)
+rm(mirna)
+rm(rna)
+```
+
+
+```{r}
+result <- iClusterBayes(meth_selected, rna_selected, mirna_selected,
+	type = c("gaussian", "gaussian", "gaussian"),K=2,n.burnin=1000,n.draw=1200,
+	prior.gamma=rep(0.1,6),sdev=0.5,beta.var.scale=1,thin=1,pp.cutoff=0.5)
+
+```
+```{r}
+save(result, file = "iClusterPlus_Result")
+
 ```
 
 ```{r}
-result <- iClusterBayes(meth_selected,rna_selected,
-	type = c("gaussian", "gaussian"),K=2,n.burnin=1000,n.draw=1200,
-	prior.gamma=rep(0.5,0.5),sdev=0.5,beta.var.scale=1,thin=1,pp.cutoff=0.5)
-
+datasets = list(meth_selected, rna_selected, mirna_selected)
+plotHMBayes(result, datasets, type = c("gaussian", "gaussian", "gaussian"), sample.order = NULL, row.order = NULL, sparse = c(TRUE, TRUE, TRUE), threshold = rep(0.5,length(datasets)), width = 5, col.scheme = rep(list(bluered(256)),length(datasets)), chr=NULL, plot.chr=NULL, cap=NULL)
 ```
 
 ```{r}
+#bmi_data <- bmi_data[common_rows,]
 clusters = result$clusters
 bmi_data$Cluster = clusters
 
@@ -126,8 +165,10 @@ count_data <- bmi_data %>%
   group_by(bmi) %>%
   mutate(Percentage = (Count / sum(Count)) * 100)
 
+count_data <- count_data %>% mutate(bmi = factor(bmi)) %>% mutate(bmi = fct_recode(bmi, Normal = "normal", Overweight = "overweight",Obese= "obese"))
+
 # Plot the data
-p = ggplot(count_data, aes(x = factor(bmi), y = Percentage, fill = factor(Cluster))) +
+p = ggplot(count_data, aes(x = bmi, y = Percentage, fill = factor(Cluster))) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(x = "", y = "Percentage Per Cluster", fill = "Cluster Assignment") +
   theme_minimal() +
@@ -140,195 +181,8 @@ p <- p +
            hjust = 1, vjust = 1, size = 4, color = "black", parse = TRUE) +
   scale_fill_manual(values = my_colors)
 
+print(p)
 
-ggsave("/Users/carternorton/Desktop/RCC/Plots/bayes_clusters.png", plot = p, width = 6, height = 4, dpi = 300)
-
-
-```
-
-
-
-
-```{r}
-plotHMBayes_custom <- function(fit, datasets, type = c("gaussian", "binomial", "poisson"),
-    sample.order = NULL, row.order = NULL, sparse = NULL, 
-    threshold = rep(0.5,length(datasets)), width = 5, scale = rep("none",length(datasets)), 
-    col.scheme = rep(list(bluered(256)),length(datasets)), chr=NULL, plot.chr=NULL, cap=NULL, custom_labels=NULL) {
-    
-    m = length(datasets)
-    if(m > length(type)){
-        stop("Error:  data type is missing for some data. \n")        
-    }
-    
-    dttype = c("gaussian","binomial","poisson")
-    if(!all(type %in% dttype)){
-        cat("Error: ",type[!all(type %in% dttype)],"\n")
-        stop("Allowed data types are gaussian, binomial and poisson. \n")
-    }
-
-    if (is.null(row.order)) {
-        row.order = rep(T, m)
-    }
-    if (is.null(scale)) {
-        scale = rep("none", m)
-    }
-    if (is.null(sparse)) {
-        sparse = rep(F, m)
-    }
-    if (is.null(cap)) {
-        cap = rep(F, m)
-    }
-    if (is.null(plot.chr)) {
-        plot.chr = rep(F, m)
-    }
-    clusters = fit$clusters
-    k = length(unique(clusters))
-    if (is.null(sample.order)) {
-        sorder = order(clusters)
-    }
-    else {
-        sorder = sample.order
-    }
-    m = length(datasets)
-    pp = unlist(lapply(1:m, function(l) {
-        dim(datasets[[l]])[2]
-    }))
-    n = dim(datasets[[1]])[1]
-    a = clusters[sorder]
-    l = length(a)
-    brkpoints = which(a[2:l] != a[1:(l - 1)])
-    cluster.start = c(1, brkpoints + 1)
-    my.panel.levelplot <- function(...) {
-        panel.levelplot(...)
-        panel.abline(v = (cluster.start[-1] - 0.5), col = "black", 
-            lwd = 1, lty = 1)
-        panel.scales = list(draw = FALSE)
-    }
-    for (i in 1:m) {
-        pp = fit$beta.pp[[i]]
-        upper = threshold[i]
-        cat(i," ", sum(pp > upper),"\n")
-        if (sparse[i] == T & sum(pp > upper) > 1) {
-            image.data = datasets[[i]][sorder, which(pp > upper)]
-        }else{
-             warning("No variable selected!")
-              image.data = datasets[[i]][sorder, ]
-        }
-        if (row.order[i] == T) {
-            diss = 1 - cor(image.data, use = "na.or.complete")
-            hclust.fit = hclust(as.dist(diss))
-            gorder = hclust.fit$order
-            image.data = image.data[, gorder]
-        }
-        if (plot.chr[i] == T) {
-            if (sparse[i]) {
-                chr = chr[which(pp > upper)]
-            }
-            len = length(chr)
-            chrom.ends <- rep(NA, length(table(chr)))
-            d = 1
-            for (r in unique(chr)) {
-                chrom.ends[d] <- max(which(chr == r))
-                d = d + 1
-            }
-            chrom.starts <- c(1, chrom.ends[-length(table(chr))] + 
-                1)
-            chrom.mids <- (chrom.starts + chrom.ends)/2
-            my.panel.levelplot.2 <- function(...) {
-                panel.levelplot(...)
-                panel.abline(v = (cluster.start[-1] - 0.5), col = "black", 
-                  lwd = 1, lty = 1)
-                panel.abline(h = len - chrom.starts[-1], col = "gray", 
-                  lwd = 1)
-                panel.scales = list(x = list(), y = list(at = len - 
-                  chrom.mids), z = list())
-            }
-            my.panel = my.panel.levelplot.2
-            scales = list(x = list(draw = F), y = list(at = len - 
-                chrom.mids, labels = names(table(chr))), z = list(draw = F))
-        }
-        else {
-            my.panel = my.panel.levelplot
-            scales = list(draw = F)
-        }
-        scale.fn = function(x) {
-            x <- sweep(x, 1L, rowMeans(x, na.rm = T), check.margin = T)
-            sx <- apply(x, 1L, sd, na.rm = T)
-            x <- sweep(x, 1L, sx, "/", check.margin = T)
-            return(x)
-        }
-        if (scale[i] == "row") {
-            image.data = scale.fn(image.data)
-        }
-        if (scale[i] == "col") {
-            image.data = scale.fn(t(image.data))
-            image.data = t(image.data)
-        }
-        image.data = as.matrix(rev(as.data.frame(image.data)))
-        if (type[i] == "binomial") {
-            colorkey = list(space = "right", height = 0.3, at = c(0, 
-                0.5, 1), tick.number = 1)
-        }
-        else {
-            colorkey = list(space = "right", height = 0.3, tick.number = 5)
-        }
-        if (cap[i] == T) {
-            cut = quantile(datasets[[i]], prob = 0.9995, na.rm = T)
-            p = levelplot(image.data, panel = my.panel, scales = scales, 
-                col.regions = col.scheme[[i]], at = c(-Inf, seq(-cut, 
-                  cut, length = 256), Inf), xlab = "", ylab = "", 
-                colorkey = colorkey)
-        }
-        else {
-            p = levelplot(image.data, panel = my.panel, scales = scales, 
-                col.regions = col.scheme[[i]], xlab = "", ylab = "", 
-                colorkey = colorkey)
-        }
-        if (i == m) {
-            print(p, split = c(1, i, 1, m), more = F, panel.width = list(width, 
-                "inches"))
-        }
-        else {
-            print(p, split = c(1, i, 1, m), more = T, panel.width = list(width, 
-                "inches"))
-        }
-        
-        # Plot colored labels
-        if (!is.null(custom_labels)) {
-            par(new = TRUE)
-            text(1:10, 1:10, labels = patient_ids, col = bmi_colors_vec, cex = 0.8)
-        }
-    }
-}
+ggsave("bayes_clusters.png", plot = p, width = 6, height = 4, dpi = 300)
 
 ```
-
-```{r}
-datasets = list(meth_selected, rna_selected)
-
-plotHMBayes(result, datasets, type = c("gaussian", "gaussian"), sample.order = NULL, row.order = NULL, sparse = c(TRUE, TRUE), threshold = rep(0.5,length(datasets)), width = 6, col.scheme = rep(list(bluered(256)),length(datasets)), chr=NULL, plot.chr=NULL, cap=NULL)
-
-
-
-
-```
-
-```{r}
-
-result2 <- iClusterPlus(dt1 = rna1,dt2=meth1,
-	type=c("gaussian","gaussian"),
- 	K=2,alpha=c(1,1),lambda=c(0.03,0.03),
-	n.burnin=100,n.draw=200,maxiter=20,sdev=0.05,eps=1.0e-4)
-
-plotHeatmap(result2,datasets,type=c("gaussian","binomial"),
-	sample.order=NULL,row.order=NULL,sparse=NULL,threshold=rep(0.25,length(datasets)),
-	width=5,scale=rep("none",length(datasets)),col.scheme=rep(list(bluered(256)),
-	length(datasets)), chr=NULL, plot.chr=NULL, cap=NULL)
-```
-
-
-```{r}
-
-#RTSNE or ConsensuClusterPlus
-```
-
