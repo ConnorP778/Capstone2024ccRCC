@@ -1,3 +1,0 @@
-Methods:
-
-Analysis of miRNA expression data was performed using DESeq2. Raw counts were calculated with BMI classifications as noted earlier. No significance was found between the normal and obese BMI groups. Between the normal and overweight categories, only two miRNA transcripts were found to be differentially expressed - miR-1269b and miR-891a (see Supplementary Information). These finding were verified using the R package Limma. 
