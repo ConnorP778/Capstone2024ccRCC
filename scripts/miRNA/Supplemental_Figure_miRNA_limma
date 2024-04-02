@@ -18,12 +18,12 @@ rownames(exprBT) <- data$miRNA_ID
 colnames(exprBT) <- gsub("\\.", "-", substr(colnames(exprBT), 1, 12))
 
 # Read clinical data
-clinical <- read.table(file = "TCGA_Clinical_Data_with_BMI_Classification.tsv", sep = "\t", header = TRUE, fill = TRUE) %>%
-  mutate(BMI.Classification = factor(BMI.Classification),
-         bmiGroup = fct_recode(BMI.Classification, "Normal" = "NW", "Obese" = "OB I", "Obese" = "OB II", "Obese" = "OB III"),
-         bmiGroup = as.character(bmiGroup)) %>%
+clinical <- read_tsv("TCGA_&_Clinical_Data.tsv")
+clinical <- rename(clinical, c("BMI Group" = "bmiGroup"))
+clinical <- rename(clinical, c("#Patient Identifier" = "TCGA.Sample.Code"))
+clinical <- mutate(clinical, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW")) %>%
   select(TCGA.Sample.Code, bmiGroup) %>%
-  filter(!is.na(bmiGroup))
+  filter(!is.na(bmiGroup)) %>% filter(bmiGroup == "Obese" | bmiGroup == "Normal")
 
 # Remove duplicated columns
 exprBT <- exprBT[, !duplicated(names(exprBT))]
@@ -32,13 +32,8 @@ exprBT <- exprBT[, !duplicated(names(exprBT))]
 for (col_name in colnames(exprBT)) {
   if (col_name %in% clinical$TCGA.Sample.Code) {
     obesity <- clinical[clinical$TCGA.Sample.Code == col_name, "bmiGroup"]
-    if (obesity == "Normal" | obesity == "Obese") {
-      new_col_name <- paste(col_name, obesity, sep = "_")
-      colnames(exprBT)[colnames(exprBT) == col_name] <- new_col_name
-    }
-    else {
-      exprBT <- select(exprBT, -col_name)
-    }
+    new_col_name <- paste(col_name, obesity, sep = "_")
+    colnames(exprBT)[colnames(exprBT) == col_name] <- new_col_name
   } else {
     exprBT <- select(exprBT, -col_name)
   }
@@ -63,6 +58,7 @@ x <- calcNormFactors(x)
 # Create design matrix
 design <- model.matrix(~0 + group)
 colnames(design) <- gsub("group", "", colnames(design))
+colnames(design) <- c("Normal", "Obese")
 
 # Create contrasts
 if (length(unique(group)) >= 2) {
