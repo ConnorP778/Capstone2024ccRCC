@@ -27,9 +27,14 @@ rownames(meth) = meth$`Composite Element REF`
 ```
 
 ```{r}
-bmi_data = read_csv("KIRC_BMI.csv") %>%
-  rename("name" = "TCGA Sample Code") %>%
-  filter(bmi != "underweight")
+#bmi_data = read_csv("KIRC_BMI.csv") %>%
+#  rename("name" = "TCGA Sample Code") %>%
+#  filter(bmi != "underweight")
+bmi_data = read_tsv("TCGA_&_Clinical_Data.tsv")
+bmi_data = rename(bmi_data, "name" = "#Patient Identifier") %>% rename("bmiGroup" = "BMI Group") %>% filter(bmiGroup != "Underweight") %>% select(name, bmiGroup) %>% filter(!is.na(bmiGroup))
+bmi_data <- mutate(bmi_data, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW"))
+bmi_data$name <- gsub("-", ".", bmi_data$name)
+
 ```
 
 ```{r}
@@ -55,19 +60,20 @@ bmi_data = bmi_data %>%
 
 ```
 
-```{r}
-meth = t(meth)
-meth <- meth[, colSums(is.na(meth)) == 0]
-meth <- as.data.frame(meth)
-```
+
 
 ```{r}
 #Let's load in rna data
 rna = read.csv("KIRC_mRNA_BMI.csv", sep=",")
+common_cols = intersect(colnames(rna), common_cols)
 rna <- rna[, common_cols]
 rna <- rna[, colSums(is.na(rna)) == 0]
 rna = as.data.frame(t(rna))
+meth <- meth[, common_cols]
+bmi_data = bmi_data %>%
+  filter(name %in% common_cols)
 ```
+
 ```{r}
 #Load in mirna data
 mirna <- read_tsv("TCGA-KIRC.mirna.tsv")
@@ -84,6 +90,11 @@ colnames(mirna) <- gsub("-", ".", colnames(mirna))
 mirna <- mirna[, colSums(is.na(mirna)) == 0]
 mirna = as.data.frame(t(mirna))
 mirna <- mirna[-c(1), ]
+```
+```{r}
+meth = t(meth)
+meth <- meth[, colSums(is.na(meth)) == 0]
+meth <- as.data.frame(meth)
 ```
 
 ```{r}
@@ -135,10 +146,6 @@ result <- iClusterBayes(meth_selected, rna_selected, mirna_selected,
 	prior.gamma=rep(0.1,6),sdev=0.5,beta.var.scale=1,thin=1,pp.cutoff=0.5)
 
 ```
-```{r}
-save(result, file = "iClusterPlus_Result")
-
-```
 
 ```{r}
 datasets = list(meth_selected, rna_selected, mirna_selected)
@@ -148,11 +155,12 @@ plotHMBayes(result, datasets, type = c("gaussian", "gaussian", "gaussian"), samp
 ```{r}
 #bmi_data <- bmi_data[common_rows,]
 clusters = result$clusters
-bmi_data$Cluster = clusters
+bmi_data$Cluster = as.vector(clusters)
+
 
 #Chisquare Test
-tidy_data <- bmi_data %>%
-  count(Cluster, bmi) %>%
+tidy_data <- bmi_data %>% mutate(bmiGroup = factor(bmiGroup)) %>% 
+  dplyr::count(Cluster, bmiGroup) %>%
   pivot_wider(names_from = Cluster, values_from = n, values_fill = 0)
 chisq_result <- chisq.test(tidy_data[, -1])
 
@@ -160,15 +168,15 @@ p_value = chisq_result$p.value
 
 # Count observations in each combination of cluster assignment and BMI category
 count_data <- bmi_data %>%
-  group_by(Cluster, bmi) %>%
+  group_by(Cluster, bmiGroup) %>%
   summarise(Count = n()) %>%
-  group_by(bmi) %>%
+  group_by(bmiGroup) %>%
   mutate(Percentage = (Count / sum(Count)) * 100)
 
-count_data <- count_data %>% mutate(bmi = factor(bmi)) %>% mutate(bmi = fct_recode(bmi, Normal = "normal", Overweight = "overweight",Obese= "obese"))
+count_data <- count_data %>% mutate(bmi = factor(bmiGroup)) #%>% mutate(bmi = fct_recode(bmiGroup, Normal = "normal", Overweight = "overweight",Obese= "obese"))
 
 # Plot the data
-p = ggplot(count_data, aes(x = bmi, y = Percentage, fill = factor(Cluster))) +
+p = ggplot(count_data, aes(x = bmiGroup, y = Percentage, fill = factor(Cluster))) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(x = "", y = "Percentage Per Cluster", fill = "Cluster Assignment") +
   theme_minimal() +
