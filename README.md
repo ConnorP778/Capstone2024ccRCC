@@ -1,7 +1,7 @@
 # Capstone2024ccRCC
 
 ## Setup 
-First, clone this repository on your local machine. The path to this repository will be used as the "base_dir" variable in each script. This will be the only variable you need to modify.
+First, clone this repository on your local machine. The path to this repository will be used as the "base_dir" variable in each script.
 
 ### Data Procurement
 The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). You will need to download data from the following links, unzip them, and save them in the "Input" folder. DO NOT change any of the original file names. If you download multiple versions of the same file, ensure that the file name does *not* include a trailing copy number (ie. "(1)"). 
@@ -10,6 +10,10 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 2. miRNA Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.mirna.tsv.gz
 3. mRNA Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.htseq_counts.tsv.gz
 4. DNA 450k methylation Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.methylation450.tsv.gz
+
+
+## TIME TO RUN
+Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled in the order they need to be run (ie 1.Figure1 should be run first). If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo on your machine. Be sure to include "/" at the end of the base_dir variable.  
 
 
 ## miRNA data scripts
