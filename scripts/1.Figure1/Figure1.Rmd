@@ -1,0 +1,293 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r include=FALSE}
+# Install DESeq2 if not already installed
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.18")
+BiocManager::install("DESeq2")
+BiocManager::install('EnhancedVolcano')
+BiocManager::install('org.Hs.eg.db')
+BiocManager::install('apeglm')
+BiocManager::install('fgsea')
+BiocManager::install('enrichR')
+BiocManager::install('tidyverse')
+```
+
+
+```{r include=FALSE}
+library(DESeq2)
+library(EnhancedVolcano)
+library(org.Hs.eg.db)
+library(dbplyr)
+library(ggplot2)
+library(apeglm)
+library(enrichR)
+library(fgsea)
+library(tidyverse)
+library(AnnotationDbi)
+```
+
+```{r}
+#Change this to match your base directory 
+base_dir <- "/Users/carternorton/repo/GitHub/Capstone2024ccRCC/"
+```
+
+
+```{r}
+# Assuming 'counts_matrix' is your count matrix with genes as rows and samples as columns
+# Rows should be gene IDs, and columns should be sample IDs
+counts_matrix <- read.csv(paste0(base_dir, "scripts/1.Figure1/KIRC_mRNA_BMI.csv"), header = TRUE)
+counts_matrix$Ensembl_ID <- sub("\\..*", "", counts_matrix$Ensembl_ID)
+col_data <- read.csv(paste0(base_dir, "scripts/1.Figure1/Figure1_BMI.csv"), row.names = 1)
+```
+
+```{r}
+col_data = col_data %>% filter(bmi %in% c("OB", "NW"))
+counts_matrix <- counts_matrix %>%
+  select(c(all_of(rownames(col_data)),"Ensembl_ID"))
+
+
+
+# Convert to factor if not already
+col_data$bmi <- factor(col_data$bmi)
+
+# Relevel the factor
+col_data$bmi <- relevel(col_data$bmi, ref = "NW")
+```
+
+
+```{r}
+#Let's normalize the ages in the col_data
+col_data$Age_scaled = (col_data$Age - mean(col_data$Age)) / sd(col_data$Age)
+```
+
+```{r}
+#We need to convert ENSG ids to gene symbols
+# https://www.reddit.com/r/bioinformatics/comments/cc5db6/help_with_converting_ensembl_id_to_gene_name/
+ann = AnnotationDbi::select(org.Hs.eg.db, keys = counts_matrix$Ensembl_ID, keytype = 'ENSEMBL', columns = 'SYMBOL')
+
+#Unfortunately, some ENSEMBL ID's map to multiple gene symbols (about 62 duplicates), so we will need to keep the first
+ann = ann[!duplicated(ann$ENSEMBL),]
+
+#Now, let's fill in any na values in the 
+ann$SYMBOL = ifelse(is.na(ann$SYMBOL), ann$ENSEMBL, ann$SYMBOL)
+
+#Let's drop repeats again
+ann = ann[!duplicated(ann$SYMBOL),]
+```
+
+```{r}
+counts_matrix = merge.data.frame(ann, counts_matrix, by.x = "ENSEMBL", by.y = "Ensembl_ID")
+rownames(counts_matrix) = counts_matrix$SYMBOL
+counts_matrix = subset(counts_matrix, select = -c(SYMBOL, ENSEMBL))
+
+```
+
+
+
+```{r include=FALSE}
+
+# Create DESeqDataSet object
+dds_set <- DESeqDataSetFromMatrix(countData = counts_matrix,
+                              colData = col_data,
+                              design = ~bmi + TC + Age_scaled) #Age may need to be centered and scaled to reduce collinearity
+#This takes about two minutes
+dds <- DESeq(dds_set)
+
+```
+
+```{r}
+# Compare conditions of interest (e.g., treated vs. control)
+result <- results(dds, contrast = c("bmi", "OB", "NW"))
+# Let's shrink the LFC numbers to reduce the impact of outliers
+res <- lfcShrink(dds, contrast = c("bmi","OB", "NW"), res=result, type = 'normal')
+```
+
+```{r}
+res_tibble = as_tibble(res)
+row.names(res_tibble) = rownames(res)
+res_tibble$SYMBOL = rownames(res)
+#write_csv(res_tibble, "")
+```
+
+
+
+```{r}
+
+# Volcano Plot
+# https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
+
+EnhancedVolcano(res, 
+                lab = rownames(res), 
+                x = 'log2FoldChange', 
+                y = 'padj', 
+                pCutoff = 1e-6, 
+                subtitle = "",
+                title = "",
+                labFace = 'bold',
+                FCcutoff = 1.5,
+                legendLabels=c('Not sig.','Not sig.','Not sig.','p-value & log2 FC'),
+                col=c('grey','grey','grey','red3'))  #+ ggplot2::coord_cartesian(xlim=c(-3, 3), ylim=c(0,30)) 
+
+ggsave(paste0(base_dir, "Output/Plots/Volcano_WithTC.png"), device = "png", height = 8)
+
+
+
+```
+
+
+```{r}
+library(fgsea)
+
+res2 <- res_tibble %>% 
+  dplyr::select(SYMBOL, stat) %>% 
+  na.omit() %>% 
+  distinct() %>% 
+  group_by(SYMBOL) %>% 
+  summarize(stat=mean(stat))%>%
+  arrange(desc(stat))
+
+ranks <- deframe(res2)
+
+```
+
+
+```{r}
+
+# Load the pathways into a named list
+set.seed(42)
+pathways.hallmark <- gmtPathways(paste0(base_dir, "Input/pathway_annotations/h.all.v2023.2.Hs.symbols.gmt"))
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nPerm=5000, minSize=10, maxSize=500) %>% as_tibble()
+
+fgseaResSave = fgseaRes %>% dplyr::select(-leadingEdge)
+write.csv(fgseaResSave, paste0(base_dir, "Output/Data/Hallmark_Pathways_GSEA.csv"))
+
+
+#Geneset instead of permutation 
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES)) %>%
+  filter(padj < .05) %>%
+  mutate(log_padj = -log10(padj),
+         pathway = str_remove(pathway, "HALLMARK_"))
+
+# Plot the combined results
+p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Pathway", y = "Normalized Enrichment Score") +
+  theme_bw() +
+  theme(legend.position="none")
+
+ggsave(paste0(base_dir, "Output/Plots/HallMarkGSEA_Together.png"), p, width = 6, height = 6, dpi=300)
+
+
+print(p)
+```
+
+```{r}
+#Let's look at the leading edge (those genes most responsible for NES)
+#https://www.gsea-msigdb.org/gsea/doc/GSEAUserGuideTEXT.htm#_Running_a_Leading
+
+
+leading_genes <- fgseaResTidy %>%
+  mutate(leadingEdge = lapply(leadingEdge, head, n = 5)) %>%
+  mutate(leadingEdge = sapply(leadingEdge, toString)) %>%
+  select(pathway, leadingEdge) %>%
+  rename("Driving Genes" = "leadingEdge")
+
+write.csv(leading_genes, paste0(base_dir, "Output/Data/hallmark_leading_genes.csv"))
+```
+
+
+```{r}
+# Load the pathways into a named list
+pathways.kegg <- gmtPathways(paste0(base_dir, "Input/pathway_annotations/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt"))
+
+fgseaRes <- fgsea(pathways=pathways.kegg, stats=ranks, nPerm=5000) %>% as_tibble()
+
+fgseaResSave = fgseaRes %>% dplyr::select(-leadingEdge)
+write.csv(fgseaResSave, paste0(base_dir, "Output/Data/KEGG_Pathways_GSEA.csv"))
+
+
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES)) %>%
+  filter(padj < 0.05) %>%
+  mutate(log_padj = -log10(padj),
+         pathway = str_remove(pathway, "KEGG_")) %>%
+  filter(grepl("(?i)metabolism|biosynthesis", pathway))
+
+
+p = ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Pathway", y = "Normalized Enrichment Score") +
+  theme_bw() +
+  theme(legend.position="none")
+
+
+ggsave(paste0(base_dir, "Output/Plots/KEGG_GSEA.png"), p, width = 10, height = 6)
+
+print(p)
+```
+
+```{r}
+cancer.pathways = read_csv(paste0(base_dir, "Input/pathway_annotations/cancer.csv"))
+
+# Assuming cancer.pathways is your data frame
+# Remove "NA" values from each column
+cancer.pathways_cleaned <- lapply(cancer.pathways, function(x) x[!is.na(x)])
+
+# Convert the cleaned list to a named list with column names as names
+cancer.pathways_named_list <- as.list(cancer.pathways_cleaned)
+names(cancer.pathways_named_list) <- names(cancer.pathways)
+```
+
+```{r}
+set.seed(42)
+fgseaRes <- fgsea(pathways=cancer.pathways_named_list, stats=ranks, nPerm=5000) %>% as_tibble()
+
+fgseaResSave = fgseaRes %>% dplyr::select(-leadingEdge)
+write.csv(fgseaResSave, paste0(base_dir, "Output/Data/Cancer_Pathways_GSEA.csv"))
+
+#Geneset instead of permutation 
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES)) %>%
+  filter(padj < .05) %>%
+  mutate(log_padj = -log10(padj))
+
+# Plot the combined results
+p <- ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES, fill="lightcoral")) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Pathway", y = "Normalized Enrichment Score") +
+  theme_bw() +
+  theme(legend.position="none")
+
+
+ggsave(paste0(base_dir, "Output/Plots/CancerPathways.png"), p, width = 6, height = 6, dpi=300)
+
+
+print(p)
+```
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

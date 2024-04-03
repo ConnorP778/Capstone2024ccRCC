@@ -1,0 +1,285 @@
+---
+title: "MethylGSA"
+output: html_document
+date: "2024-03-12"
+---
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("methylGSA")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+library(methylGSA)
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(data.table)
+library(BiocParallel)
+library(tidyverse)
+library(progress)
+library(limma)
+library(fgsea)
+library(dplyr)
+library(org.Hs.eg.db)
+library(minfi)
+library(pbmcapply)
+library(ggplot2)
+
+
+
+```
+
+
+
+```{r pressure, echo=FALSE}
+meth = fread("/Users/carternorton/Desktop/RCC/xena/TCGA-KIRC.methylation450.tsv", sep= "\t")
+meth <- as.data.frame(meth)
+rownames(meth) = meth$`Composite Element REF`
+```
+
+
+```{r, echo=FALSE}
+bmi_data = read_csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv") %>%
+  rename('name' = 'TCGA Sample Code')
+```
+
+```{r}
+# Step 1: Remove columns that don't end in -01A
+meth <- meth[, grepl("-01A$", colnames(meth))]
+
+# Step 2: Remove parts of column names after the last "-"
+colnames(meth) <- sub("(.*)-.*", "\\1", colnames(meth))
+
+# Step 3: Replace all "-" with "."
+colnames(meth) <- gsub("-", ".", colnames(meth))
+```
+
+```{r}
+print(colnames(meth))
+```
+
+```{r}
+
+# Extract the TCGA Sample Code column from bmi_data
+sample_codes <- bmi_data$name
+
+# Identify the common column names between 'meth' and 'sample_codes'
+common_cols <- intersect(colnames(meth), sample_codes)
+
+# Keep only the columns in 'meth' that are present in 'common_cols'
+meth <- meth[, common_cols]
+bmi_data = bmi_data %>%
+  filter(name %in% common_cols)
+
+```
+
+```{r}
+#Merge the data
+methT = t(meth)
+merged_df <- merge(data.frame(ID = rownames(methT), methT, row.names = NULL), bmi_data, by.x = "ID", by.y = "name", all.x = TRUE)
+```
+
+```{r}
+#Drop all NA columns
+merged_df <- merged_df[, colSums(is.na(merged_df)) == 0]
+```
+
+
+```{r}
+fwrite(merged_df, "/Users/carternorton/Desktop/RCC/xena/meth_bmi.csv")
+```
+
+```{r}
+merged_df = fread("/Users/carternorton/Desktop/RCC/xena/meth_bmi.csv", sep=",")
+merged_df = as.data.frame(merged_df)
+```
+
+```{r}
+#Let's add all the other variables
+col_data <- read.csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv", row.names = 1)
+col_data$age_scaled = (col_data$Age - mean(col_data$Age)) / sd(col_data$Age)
+#Limit this to only rownames that are in the "ID" column of merged_df
+col_data <- col_data[rownames(col_data) %in% merged_df$ID, ]
+```
+
+
+```{r}
+# Separate data into high and low BMI groups
+merged_df$sex = col_data$TC
+merged_df$age = col_data$age_scaled
+#high_bmi_data <- merged_df[merged_df$bmi == "obese", ]
+#low_bmi_data <- merged_df[merged_df$bmi == "normal", ]
+```
+
+```{r}
+#Let's get a list of all colnames that include cg
+cgs <- grep("cg", colnames(merged_df), value = TRUE)
+
+# Perform differential methylation analysis for each CpG site in parallel (~30 minutes)
+results <- pbmclapply(cgs, function(cpg_site) {
+  # Extract beta values for the current CpG site
+  cpg_values <- merged_df[, cpg_site]
+
+  # Split data into features (beta values) and target (BMI)
+  X <- cpg_values
+  bmi <- merged_df$bmi
+  age = merged_df$age
+  sex = merged_df$sex
+  
+  # Create a design matrix including "sex" and "age"
+  #design_formula <- as.formula(paste("~bmi + sex + age"))
+  #design_formula <- as.formula(paste("~bmi"))
+
+  # Create a design matrix
+  #design_matrix <- model.matrix(design_formula, data = merged_df)
+  design_matrix <- model.matrix(~bmi + age + sex)
+
+  # Fit a linear model
+  fit <- lmFit(X, design_matrix)
+
+  # Perform empirical Bayes moderation
+  fit <- eBayes(fit)
+
+  # Return results
+  data.frame(
+    CpG_Site = cpg_site,
+    F_Statistic = fit$F.p.value,
+    P_Value = fit$p.value
+  )
+})
+
+
+# Combine the results from all parallel processes
+results <- do.call(rbind, results)
+print("done")
+```
+
+```{r}
+#Save results from differential methylation analysis
+fwrite(results, "/Users/carternorton/Desktop/RCC/result_data/cpg_diff_adj.csv")
+```
+
+```{r}
+#Load results from analysis
+results = fread("/Users/carternorton/Desktop/RCC/result_data/cpg_diff.csv", sep = ",")
+```
+
+```{r}
+anno <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+
+cpgs <- rownames(anno)
+genes <- anno$UCSC_RefGene_Name
+
+# Function to extract the first item from a string split by ";"
+get_first_gene <- function(gene_string) {
+  if (is.na(gene_string) || gene_string == "") {
+    return(NA)
+  } else {
+    return(strsplit(gene_string, ";")[[1]][1])
+  }
+}
+
+# Apply the function to extract the first gene from each entry
+first_genes <- sapply(genes, get_first_gene)
+
+# Create a data frame
+anno_df <- data.frame(CpG = cpgs, Gene = first_genes, stringsAsFactors = FALSE)
+```
+
+```{r}
+#Methylglm 
+names = results$CpG_Site
+obese = results$P_Value.yobese
+
+obese = setNames(obese, names)
+pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+
+cancer.pathways.df = read_csv("/Users/carternorton/Desktop/RCC/reference/PathwayGenes.csv")
+cancer.pathways_cleaned <- lapply(cancer.pathways.df, function(x) x[!is.na(x)])
+cancer.pathways <- as.list(cancer.pathways_cleaned)
+names(cancer.pathways) <- names(cancer.pathways.df)
+
+pathways.kegg <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
+
+FullAnnot = prepareAnnot(anno_df)
+
+#Generate Results!
+hallmark = methylglm(cpg.pval = obese, FullAnnot = FullAnnot, 
+                    GS.list = pathways.hallmark, GS.idtype = "SYMBOL", 
+                    minsize = 3, maxsize = 500)
+
+cancer = methylglm(cpg.pval = obese, FullAnnot = FullAnnot, 
+                    GS.list = cancer.pathways, GS.idtype = "SYMBOL", 
+                    minsize = 3, maxsize = 500)
+
+kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot, 
+                    GS.list = pathways.kegg, GS.idtype = "SYMBOL", 
+                    minsize = 3, maxsize = 500)
+
+
+```
+```{r}
+write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Hallmark_methylGSA_result.csv")
+write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_methylGSA_result.csv")
+write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_methylGSA_result.csv")
+```
+
+
+
+
+```{r}
+##Methylation Assingment hig, mid, low
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
+
+meth$ENTITY_STABLE_ID <- row.names(meth) 
+anno_df = anno_df %>%
+  rename(ENTITY_STABLE_ID = "CpG")%>%
+  na.omit()
+
+meth_genes = inner_join(meth,anno_df, by = "ENTITY_STABLE_ID")
+
+methylation_data = meth_genes %>%
+  pivot_longer(TCGA.B0.5697:TCGA.DV.A4VZ, names_to = "Patient", values_to = "CpG_Value")
+
+plot1 <- ggplot(methylation_data, aes(x=Meth_Level_methylated)) + 
+  geom_histogram()
+
+plot1
+
+methylation_data_ = methylation_data %>%
+  na.omit()%>%
+  mutate(mean_meth = rowMeans(across(where(is.numeric)))) %>%
+  dplyr::select(Gene ,mean_meth) %>%
+  group_by(Gene) %>%
+  summarise(average = mean(mean_meth)) %>%
+  mutate(methylation = case_when(average < 0.2 ~ 'low',
+                          average <= 0.5 ~ 'med',
+                          average > 0.5 ~ 'high'))%>%
+  na.omit()
+
+
+plot2 <- ggplot(methylation_data_, aes(x=average)) + 
+  geom_histogram()
+
+plot2
+  
+
+```
+
+```{r}
+##Generating files to combine with mutation data. 
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
+
+methylation_data_levels = methylation_data %>%
+  mutate(Level = case_when(CpG_Value < 0.2 ~ 'low',
+                          CpG_Value <= 0.5 ~ 'med',
+                          CpG_Value > 0.5 ~ 'high')) %>%
+  na.omit()
+
+VHL_data = methylation_data_levels %>%
+  filter(Gene == "VHL") %>%
+  na.omit()
+```
+
