@@ -21,7 +21,7 @@ All output, including plots and data will be saved in the "output" folder of thi
 
 ### Figure 1 (mRNA)
 1. Run Figure1_preprocessing.ipynb with "base_dir"
-2. Run Figure1.rmd
+2. Run Figure1.rmd with "base_dir"
 
 
 ### miRNA data scripts
