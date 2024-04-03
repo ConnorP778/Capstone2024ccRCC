@@ -221,9 +221,9 @@ kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot,
 
 ```
 ```{r}
-write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Hallmark_pathways_results.csv")
-write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_pathways_results.csv")
-write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_pathways_results.csv")
+write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Hallmark_methylGSA_result.csv")
+write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_methylGSA_result.csv")
+write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_methylGSA_result.csv")
 ```
 
 
