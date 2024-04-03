@@ -10,4 +10,4 @@ Download the TCGA miRNA data found at this link: https://xenabrowser.net/datapag
 2. Download the TCGA mRNA data found at this link: https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.htseq_counts.tsv.gz, unzip and place in "Figure1/xena/" subfolder
 3. Open Figure1/Figure1_preprocessing.ipynb in your preferred IDE, and set the base_dir variable as the path to "Figure1" folder on your computer. Don't forget "/"! Run the script.
 4. Open Figure1/Figure1.RMD in your preferred IDE, and set the base_dir variable as the path to "Figure1" folder on your computer. Run the script.
-5. All Figure 1 figures will now be visible in the "Figure1/Plots" subfolder, and driving genes are visible at "Figure1/Data/leading_genes.csv". 
+5. All Figure 1 plots will now be visible in the "Figure1/Plots" subfolder, and driving genes are visible at "Figure1/Data/leading_genes.csv". 
