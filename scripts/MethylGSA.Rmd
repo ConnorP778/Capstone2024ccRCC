@@ -27,6 +27,8 @@ library(minfi)
 library(pbmcapply)
 library(ggplot2)
 
+
+
 ```
 
 
@@ -186,8 +188,6 @@ first_genes <- sapply(genes, get_first_gene)
 anno_df <- data.frame(CpG = cpgs, Gene = first_genes, stringsAsFactors = FALSE)
 ```
 
-
-
 ```{r}
 #Methylglm 
 names = results$CpG_Site
@@ -226,17 +226,22 @@ write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_
 write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_pathways_results.csv")
 ```
 
+
+
+
 ```{r}
 ##Methylation Assingment hig, mid, low
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
 
 meth$ENTITY_STABLE_ID <- row.names(meth) 
 anno_df = anno_df %>%
-  rename(ENTITY_STABLE_ID = "CpG")
+  rename(ENTITY_STABLE_ID = "CpG")%>%
+  na.omit()
 
 meth_genes = inner_join(meth,anno_df, by = "ENTITY_STABLE_ID")
 
 methylation_data = meth_genes %>%
-  pivot_longer(TCGA.B0.5697:TCGA.DV.A4VZ, names_to = "Patient", values_to = "Meth_Level_methylated")
+  pivot_longer(TCGA.B0.5697:TCGA.DV.A4VZ, names_to = "Patient", values_to = "CpG_Value")
 
 plot1 <- ggplot(methylation_data, aes(x=Meth_Level_methylated)) + 
   geom_histogram()
@@ -251,12 +256,30 @@ methylation_data_ = methylation_data %>%
   summarise(average = mean(mean_meth)) %>%
   mutate(methylation = case_when(average < 0.2 ~ 'low',
                           average <= 0.5 ~ 'med',
-                          average > 0.5 ~ 'high'))
+                          average > 0.5 ~ 'high'))%>%
+  na.omit()
+
 
 plot2 <- ggplot(methylation_data_, aes(x=average)) + 
   geom_histogram()
 
 plot2
+  
 
+```
+
+```{r}
+##Generating files to combine with mutation data. 
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
+
+methylation_data_levels = methylation_data %>%
+  mutate(Level = case_when(CpG_Value < 0.2 ~ 'low',
+                          CpG_Value <= 0.5 ~ 'med',
+                          CpG_Value > 0.5 ~ 'high')) %>%
+  na.omit()
+
+VHL_data = methylation_data_levels %>%
+  filter(Gene == "VHL") %>%
+  na.omit()
 ```
 
