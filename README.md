@@ -1,7 +1,7 @@
 # Capstone2024ccRCC
 
 ## Setup 
-First, clone this repository on your local machine. The path to this repository will be used as the "base_dir" variable in each script.
+First, clone this repository on your local machine. 
 
 ### Data Procurement
 The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). You will need to download data from the following links, unzip them, and save them in the "Input" folder. DO NOT change any of the original file names. If you download multiple versions of the same file, ensure that the file name does *not* include a trailing copy number (ie. "(1)"). 
