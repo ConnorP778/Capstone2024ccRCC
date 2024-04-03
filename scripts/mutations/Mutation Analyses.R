@@ -17,11 +17,12 @@ library(tidyr)
 # Step 6: unzip the downloaded folder
 # Step 7: enter the address to this TCGA data as the 'path_to_TCGA_data' below
 path_to_TCGA_data <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Reproducibility/kirc_tcga_pan_can_atlas_2018'
+
 mutations_file <- 'data_mutations.txt'
 path_to_mutations_file <- file.path(path_to_TCGA_data, mutations_file)
 # Step 8: download the clinical data FIXME: WHERE TO GET THIS FROM
 # Step 9: enter the address to this clinical data as the 'path_to_clinical_data' below
-path_to_clinical_data_file <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/PatientDataWithBMI.tsv'
+path_to_clinical_data_file <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/TCGA_&_Clinical_Data.tsv'
 
 
 
@@ -51,7 +52,9 @@ barcode_counts_df$'Patient_ID' <- sub("-01$", "", barcode_counts_df$'Patient_ID'
 
 # read clinical data
 data_clinical <- as.data.frame(read.delim(path_to_clinical_data_file, header = TRUE, sep = "\t", dec = ".")) %>%
-  arrange(PATIENT_ID)
+  arrange(X.Patient.Identifier) %>%
+  rename(PATIENT_ID = X.Patient.Identifier, SUBTYPE = Subtype)
+
 
 # Filter rows with "KIRC" value in the "CANCER_TYPE_ACRYONYM" column and remove rows with NA values
 kirc_data <- data_clinical[!is.na(data_clinical$SUBTYPE) & data_clinical$SUBTYPE == "KIRC", ]
@@ -398,12 +401,208 @@ kegg_pathway_mutation_df <- file.path(path_to_TCGA_data, kegg_mut_file)
 write.table(results_kegg_pathways_chisq, file = kegg_pathway_mutation_df, sep = ",", quote = FALSE, row.names = FALSE)
 
 
+
 # ANALYSIS 5: GSEA Mutation Table
+
+# FIXME: link to Carter's GSEA and Adj data
+# load the individual csv files
+mut_kegg <- read.csv(kegg_pathway_mutation_df)
+mut_hallmark <- read.csv(hallmark_pathway_mutation_df)
+mut_cancer <- read.csv(cancer_pathway_mutation_df)
+gsea_kegg <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/KEGG_Pathways_GSEA.csv')
+gsea_hallmark <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Hallmark_Pathways_GSEA.csv')
+gsea_cancer <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Cancer_Pathways_GSEA.csv')
+adj_kegg <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Kegg_pathways_adj_results.csv')
+adj_hallmark <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Hallmark_pathways_adj_results.csv')
+adj_cancer <- read.csv('/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Cancer_pathways_adj_results.csv')
+
+# Rename 'pval' column to designate analysis and data types, select 'pathway' and 'pval' columns
+gsea_kegg <- gsea_kegg %>%
+  rename(pval_gsea = pval) %>%
+  select(pathway, pval_gsea)
+
+gsea_hallmark <- gsea_hallmark %>%
+  rename(pval_gsea = pval) %>%
+  select(pathway, pval_gsea)
+
+gsea_cancer <- gsea_cancer %>%
+  rename(pval_gsea = pval) %>%
+  select(pathway, pval_gsea)
+
+mut_kegg <- mut_kegg %>%
+  rename(pval_mut = pval) %>%
+  select(pathway, pval_mut)
+
+mut_hallmark <- mut_hallmark %>%
+  rename(pval_mut = pval) %>%
+  select(pathway, pval_mut)
+
+mut_cancer <- mut_cancer %>%
+  rename(pval_mut = pval) %>%
+  select(pathway, pval_mut)
+
+adj_kegg <- adj_kegg %>%
+  rename(pval_adj = pvalue, pathway = ID) %>%
+  select(pathway, pval_adj)
+
+adj_hallmark <- adj_hallmark %>%
+  rename(pval_adj = pvalue, pathway = ID) %>%
+  select(pathway, pval_adj)
+
+adj_cancer <- adj_cancer %>%
+  rename(pval_adj = pvalue, pathway = ID) %>%
+  select(pathway, pval_adj)
+
+
+# Merge mut_kegg, gsea_kegg, adj_kegg based on the pathway column
+merged_kegg <- merge(mut_kegg, gsea_kegg, by = "pathway", all = TRUE)
+merged_kegg <- merge(merged_kegg, adj_kegg, by = "pathway", all = TRUE)
+
+# Merge mut_hallmark, gsea_hallmark, adj_hallmark based on the pathway column
+merged_hallmark <- merge(mut_hallmark, gsea_hallmark, by = "pathway", all = TRUE)
+merged_hallmark <- merge(merged_hallmark, adj_hallmark, by = "pathway", all = TRUE)
+
+# Merge mut_cancer, gsea_cancer, adj_cancer based on the pathway column
+merged_cancer <- merge(mut_cancer, gsea_cancer, by = "pathway", all = TRUE)
+merged_cancer <- merge(merged_cancer, adj_cancer, by = "pathway", all = TRUE)
+
+# Define the file path for saving the CSV of the analysis
+kegg_table_file <- 'kegg_analysis_table.csv'
+kegg_pathway_table <- file.path(path_to_TCGA_data, kegg_table_file)
+cancer_table_file <- 'cancer_analysis_table.csv'
+cancer_pathway_table <- file.path(path_to_TCGA_data, cancer_table_file)
+hallmark_table_file <- 'hallmark_analysis_table.csv'
+hallmark_pathway_table <- file.path(path_to_TCGA_data, hallmark_table_file)
+
+# Write the merged data to a new CSV file
+write.csv(merged_kegg, file = kegg_pathway_table, row.names = FALSE)
+write.csv(merged_cancer, file = cancer_pathway_table, row.names = FALSE)
+write.csv(merged_hallmark, file = hallmark_pathway_table, row.names = FALSE)
 
 
 
 # ANALYSIS 6: Multiomics
 
+library(tidyverse)
+library(pathwayMultiomics)
+
+# read in data
+cancer_df <- read.csv(cancer_pathway_table)
+hallmark_df <- read.csv(hallmark_pathway_table)
+kegg_df <- read.csv(kegg_pathway_table)
+
+# Replace NA values in pval_mut or pval_gsea columns with 1
+cancer_df$pval_mut <- ifelse(is.na(cancer_df$pval_mut), 1, cancer_df$pval_mut)
+cancer_df$pval_gsea <- ifelse(is.na(cancer_df$pval_gsea), 1, cancer_df$pval_gsea)
+cancer_df$pval_adj <- ifelse(is.na(cancer_df$pval_adj), 1, cancer_df$pval_adj)
+
+hallmark_df$pval_mut <- ifelse(is.na(hallmark_df$pval_mut), 1, hallmark_df$pval_mut)
+hallmark_df$pval_gsea <- ifelse(is.na(hallmark_df$pval_gsea), 1, hallmark_df$pval_gsea)
+hallmark_df$pval_adj <- ifelse(is.na(hallmark_df$pval_adj), 1, hallmark_df$pval_adj)
+
+kegg_df$pval_mut <- ifelse(is.na(kegg_df$pval_mut), 1, kegg_df$pval_mut)
+kegg_df$pval_gsea <- ifelse(is.na(kegg_df$pval_gsea), 1, kegg_df$pval_gsea)
+kegg_df$pval_adj <- ifelse(is.na(kegg_df$pval_adj), 1, kegg_df$pval_adj)
+
+# calculate minimax statistic
+cancer_minimax_df <- cancer_df %>%
+  select(pathway, pval_mut, pval_gsea, pval_adj) %>%
+  rename(mut = pval_mut, gsea = pval_gsea, adj = pval_adj) %>%
+  MiniMax()
+
+hallmark_minimax_df <- hallmark_df %>%
+  select(pathway, pval_mut, pval_gsea, pval_adj) %>%
+  rename(mut = pval_mut, gsea = pval_gsea, adj = pval_adj) %>%
+  MiniMax()
+
+kegg_minimax_df <- kegg_df %>%
+  select(pathway, pval_mut, pval_gsea, pval_adj) %>%
+  rename(mut = pval_mut, gsea = pval_gsea, adj = pval_adj) %>%
+  MiniMax()
+
+# adjust pathway p-values and filter to the most significant
+cancer_res_df <- cancer_minimax_df %>%
+  mutate(MiniMaxFDR = p.adjust(MiniMaxP, method = "fdr"))
+
+hallmark_res_df <- hallmark_minimax_df %>%
+  mutate(MiniMaxFDR = p.adjust(MiniMaxP, method = "fdr"))
+
+kegg_res_df <- kegg_minimax_df %>%
+  mutate(MiniMaxFDR = p.adjust(MiniMaxP, method = "fdr"))
+
+# Define the file path for saving the CSV of the analysis
+kegg_minimax_file <- 'kegg_minimax.csv'
+kegg_minimax_pathway <- file.path(path_to_TCGA_data, kegg_minimax_file)
+cancer_minimax_file <- 'cancer_minimax.csv'
+cancer_minimax_pathway <- file.path(path_to_TCGA_data, cancer_minimax_file)
+hallmark_minimax_file <- 'hallmark_minimax.csv'
+hallmark_minimax_pathway <- file.path(path_to_TCGA_data, hallmark_minimax_file)
+
+# Save the data frames as CSV files
+write.csv(cancer_res_df, file = cancer_minimax_pathway, row.names = FALSE)
+write.csv(hallmark_res_df, file = hallmark_minimax_pathway, row.names = FALSE)
+write.csv(kegg_res_df, file = kegg_minimax_pathway, row.names = FALSE)
+
 
 
 # ANALYSIS 7: Indel SNV Analysis
+
+library(ggplot2)
+
+# Add INDEL_COUNT and SNP_COUNT columns with zero in each entry
+filtered_data <- kirc_data %>%
+  select(PATIENT_ID) %>%
+  mutate(INDEL_COUNT = 0, SNP_COUNT = 0)
+# Loop through each row in data_mutation
+for (i in 1:nrow(data_mutation)) {
+  # Get the Tumor_Sample_Barcode and Variant_Type for the current row
+  tumor_sample <- data_mutation$Tumor_Sample_Barcode[i]
+  variant_type <- data_mutation$Variant_Type[i]
+  
+  # Check if the Tumor_Sample_Barcode is in the PATIENT_ID column of filtered_data
+  if (tumor_sample %in% filtered_data$PATIENT_ID) {
+    # Get the corresponding row in filtered_data
+    patient_row <- which(filtered_data$PATIENT_ID == tumor_sample)
+    
+    # Update counts based on Variant_Type
+    if (variant_type == "SNP") {
+      filtered_data$SNP_COUNT[patient_row] <- filtered_data$SNP_COUNT[patient_row] + 1
+    } else if (variant_type == "INS" || variant_type == "DEL") {
+      filtered_data$INDEL_COUNT[patient_row] <- filtered_data$INDEL_COUNT[patient_row] + 1
+    }
+  }
+}
+
+# Add a new column called BMI_CLASS to filtered_data
+filtered_data$BMI_CLASS <- NA  # Initialize the column with NA
+
+# Update BMI_CLASS based on patient IDs
+filtered_data$BMI_CLASS[filtered_data$PATIENT_ID %in% ob_patient_ids] <- "OB"
+filtered_data$BMI_CLASS[filtered_data$PATIENT_ID %in% nw_patient_ids] <- "NW"
+
+
+# Create a new column called PROPORTION
+filtered_data <- filtered_data %>%
+  mutate(PROPORTION = INDEL_COUNT / (INDEL_COUNT + SNP_COUNT))
+
+
+boxplot(PROPORTION ~ BMI_CLASS, data = filtered_data,
+        main = "Proportion of Indels by BMI Classification",
+        xlab = "BMI Classification", ylab = "Proportion of Indels",
+        col = c("orange", "blue"),
+        notch = TRUE)
+
+# Perform a t-test to compare proportions
+t_test <- t.test(PROPORTION ~ BMI_CLASS, data = filtered_data)
+
+# Add p-value to the plot
+p_value <- format.pval(t_test$p.value)
+text(1.5, max(filtered_data$PROPORTION) - 0.05, paste("p-value =", p_value), adj = 0.5)
+
+# Define the file path for saving the PDF of the analysis
+indel_snv_file <- 'indel_prop_boxplot.pdf'
+indel_snv_pdf_pathway <- file.path(path_to_TCGA_data, indel_snv_file)
+
+# Save the plot as a file
+dev.print(pdf, file = indel_snv_pdf_pathway, width = 8, height = 6)
+
