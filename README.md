@@ -15,7 +15,7 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 ## TIME TO RUN
 Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled in the order they need to be run (ie 1.Figure1 should be run first). If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
 
-NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a command that takes >15 minutes. If you wish to bypass this command, these scripts will have this line of code documented with a "TIME INTENSE" comment, and optional command to pre-load in results. 
+NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a command that takes >15 minutes. If you wish to bypass this command, these scripts will have this line of code annotated with "TIME INTENSE", and optional command immediately afterwards to pre-load in results. 
 
 All output, including plots and data will be saved in the "output" folder of this repo. 
 
