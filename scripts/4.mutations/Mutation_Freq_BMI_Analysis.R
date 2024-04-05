@@ -1,9 +1,18 @@
-# ANALYSIS 2: Mutation BMI frequency Analysis
+# script for mutation frequency and BMI classification logistic regression analysis
+
+
+# Update the base_dir to match where the github repo was downloaded
+base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Capstone2024ccRCC'
+path_to_mutations_file <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/data_mutations.txt')
+path_to_clinical_data_file <- file.path(base_dir, 'Input/TCGA_&_Clinical_Data.tsv')
+output_plot_dir <- file.path(base_dir, 'Output/Plots/mut_freq_plot.pdf')
+
 
 # read mutation data
 data_mutation <- as.data.frame(read.delim(path_to_mutations_file, header = TRUE, sep = "\t", dec = ".")) %>%
   arrange(Hugo_Symbol)
 selected_columns <- data_mutation[c("Hugo_Symbol", "Tumor_Sample_Barcode")]
+
 # Remove "-01" from the end of every entry in the "Tumor_Sample_Barcode" column
 data_mutation$Tumor_Sample_Barcode <- gsub("-01$", "", data_mutation$Tumor_Sample_Barcode)
 
@@ -11,19 +20,21 @@ data_mutation$Tumor_Sample_Barcode <- gsub("-01$", "", data_mutation$Tumor_Sampl
 # count unique entries of "Tumor_Sample_Barcode"
 barcode_counts <- table(data_mutation$Tumor_Sample_Barcode)
 
+
 # Convert the table to a data frame, format patient IDs appropriately
 barcode_counts_df <- data.frame(Patient_ID = names(barcode_counts), Mutation_Count = as.vector(barcode_counts))
 barcode_counts_df$'Patient_ID' <- sub("-01$", "", barcode_counts_df$'Patient_ID')
+
 
 # read clinical data
 data_clinical <- as.data.frame(read.delim(path_to_clinical_data_file, header = TRUE, sep = "\t", dec = ".")) %>%
   arrange(X.Patient.Identifier) %>%
   rename(PATIENT_ID = X.Patient.Identifier, SUBTYPE = Subtype)
 
-
 # Filter rows with "KIRC" value in the "CANCER_TYPE_ACRYONYM" column and remove rows with NA values
 kirc_data <- data_clinical[!is.na(data_clinical$SUBTYPE) & data_clinical$SUBTYPE == "KIRC", ]
 clinical_filtered_columns <- kirc_data[c("PATIENT_ID", "BMI", "BMI.Classification")]
+
 
 # Create a new column "Simplified_Classifications"
 clinical_filtered_columns <- clinical_filtered_columns %>%
@@ -32,11 +43,14 @@ clinical_filtered_columns <- clinical_filtered_columns %>%
     TRUE ~ BMI.Classification  # For all other cases, keep the original classification
   ))
 
+
 # Merge the data frames based on the specified columns
 merged_data <- merge(clinical_filtered_columns, barcode_counts_df, by.x = "PATIENT_ID", by.y = "Patient_ID", all = TRUE)
 
+
 # Convert BMI classification to a factor
 merged_data$Simplified_Classifications <- factor(merged_data$Simplified_Classifications, levels = c("NW", "OW", "OB"))
+
 
 # Fit logistic regression model
 model <- glm(Simplified_Classifications ~ Mutation_Count, data = merged_data, family = binomial)
@@ -47,12 +61,10 @@ summary_model <- summary(model)
 # Extract the p-value
 p_value <- summary_model$coefficients["Mutation_Count", "Pr(>|z|)"]
 
-# Define the file path for saving the PDF of the analysis
-mutation_frequency_file <- 'frequency_analysis.pdf'
-path_to_mutations_file <- file.path(path_to_TCGA_data, mutation_frequency_file)
 
 # Open a PDF device to start recording the plot
-pdf(path_to_mutations_file)
+pdf(output_plot_dir)
+
 
 # Visualize the association with custom x-axis range
 plot(merged_data$Mutation_Count, merged_data$Simplified_Classifications, 
