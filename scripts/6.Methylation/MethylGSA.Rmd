@@ -4,13 +4,16 @@ output: html_document
 date: "2024-03-12"
 ---
 
+#This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+#Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+#Before you start make sure you have downloaded the following packages and install them.
+
 ```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("methylGSA")
 ```
-
 
 ```{r message=FALSE, warning=FALSE}
 library(methylGSA)
@@ -26,22 +29,25 @@ library(org.Hs.eg.db)
 library(minfi)
 library(pbmcapply)
 library(ggplot2)
-
-
-
 ```
 
-
+```{r}
+#Change this to match your base directory 
+base_dir <- "/Users/badiquinteros/Downloads/"
+```
 
 ```{r pressure, echo=FALSE}
-meth = fread("/Users/carternorton/Desktop/RCC/xena/TCGA-KIRC.methylation450.tsv", sep= "\t")
+##Download the TCGA-KIRC.methylation450.tsv.gz data from the following link: https://xenabrowser.net/datapages/?dataset=TCGA-KIRC.methylation450.tsv&host=https%3A%2F%2Fgdc.xenahubs.net&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443
+## Make sure to unzip the folder and put the file into the Input folder in the Capstone2024ccRCC-main folder
+meth = fread(paste0(base_dir, "Capstone2024ccRCC-main/Input/TCGA-KIRC.methylation450.tsv"), sep= "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
 
 
 ```{r, echo=FALSE}
-bmi_data = read_csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv") %>%
+##Run Figure 1 script to generate the Figure1_BMI.csv file
+bmi_data = read_csv(paste0(base_dir, "scripts/1.Figure1/Figure1_BMI.csv")) %>%
   rename('name' = 'TCGA Sample Code')
 ```
 
@@ -88,17 +94,17 @@ merged_df <- merged_df[, colSums(is.na(merged_df)) == 0]
 
 
 ```{r}
-fwrite(merged_df, "/Users/carternorton/Desktop/RCC/xena/meth_bmi.csv")
+fwrite(merged_df, paste0(base_dir, "Capstone2024ccRCC-main/Output/meth_bmi.csv"))
 ```
 
 ```{r}
-merged_df = fread("/Users/carternorton/Desktop/RCC/xena/meth_bmi.csv", sep=",")
+merged_df = fread(paste0(base_dir, "Capstone2024ccRCC-main/Output/meth_bmi.csv"), sep=",")
 merged_df = as.data.frame(merged_df)
 ```
 
 ```{r}
 #Let's add all the other variables
-col_data <- read.csv("/Users/carternorton/Desktop/RCC/KIRC_BMI.csv", row.names = 1)
+col_data <- read.csv(paste0(base_dir, "scripts/1.Figure1/Figure1_BMI.csv"), row.names = 1)
 col_data$age_scaled = (col_data$Age - mean(col_data$Age)) / sd(col_data$Age)
 #Limit this to only rownames that are in the "ID" column of merged_df
 col_data <- col_data[rownames(col_data) %in% merged_df$ID, ]
@@ -158,12 +164,12 @@ print("done")
 
 ```{r}
 #Save results from differential methylation analysis
-fwrite(results, "/Users/carternorton/Desktop/RCC/result_data/cpg_diff_adj.csv")
+fwrite(results, paste0(base_dir, "Capstone2024ccRCC-main/Output/cpg_diff_adj.csv"))
 ```
 
 ```{r}
 #Load results from analysis
-results = fread("/Users/carternorton/Desktop/RCC/result_data/cpg_diff.csv", sep = ",")
+results = fread(paste0(base_dir, "Capstone2024ccRCC-main/Output/cpg_diff_adj.csv"), sep = ",")
 ```
 
 ```{r}
@@ -194,9 +200,9 @@ names = results$CpG_Site
 obese = results$P_Value.yobese
 
 obese = setNames(obese, names)
-pathways.hallmark <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/h.all.v2023.2.Hs.symbols.gmt")
+pathways.hallmark <- gmtPathways(paste0(base_dir,"Capstone2024ccRCC-main/Input/pathway_annotationsh.all.v2023.2.Hs.symbols.gmt"))
 
-cancer.pathways.df = read_csv("/Users/carternorton/Desktop/RCC/reference/PathwayGenes.csv")
+cancer.pathways.df = read_csv(paste0(base_dir,"Capstone2024ccRCC-main/Input/hallmark.csv"))
 cancer.pathways_cleaned <- lapply(cancer.pathways.df, function(x) x[!is.na(x)])
 cancer.pathways <- as.list(cancer.pathways_cleaned)
 names(cancer.pathways) <- names(cancer.pathways.df)
@@ -221,9 +227,9 @@ kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot,
 
 ```
 ```{r}
-write.csv(hallmark, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Hallmark_methylGSA_result.csv")
-write.csv(cancer, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Cancer_methylGSA_result.csv")
-write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_methylGSA_result.csv")
+write.csv(hallmark, paste0(base_dir, "Capstone2024ccRCC-main/Output/Hallmark_methylGSA_result.csv"))
+write.csv(cancer, paste0(base_dir, "Capstone2024ccRCC-main/Output/Cancer_methylGSA_result.csv"))
+write.csv(kegg, paste0(base_dir, "Capstone2024ccRCC-main/Output/Kegg_methylGSA_result.csv"))
 ```
 
 
@@ -231,7 +237,7 @@ write.csv(kegg, "/Users/carternorton/Desktop/RCC/result_data/MethylGSA/Kegg_meth
 
 ```{r}
 ##Methylation Assingment hig, mid, low
-#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
+#FYI you will need to run lines before running this section 36-40, 48-58, 175-195 
 
 meth$ENTITY_STABLE_ID <- row.names(meth) 
 anno_df = anno_df %>%
@@ -247,6 +253,8 @@ plot1 <- ggplot(methylation_data, aes(x=Meth_Level_methylated)) +
   geom_histogram()
 
 plot1
+
+ggsave(paste0(base_dir, "Capstone2024ccRCC-main/Output/Plots/plot1_methylation.png"), plot1, width = 10, height = 6)
 
 methylation_data_ = methylation_data %>%
   na.omit()%>%
@@ -264,13 +272,14 @@ plot2 <- ggplot(methylation_data_, aes(x=average)) +
   geom_histogram()
 
 plot2
-  
+
+ggsave(paste0(base_dir, "Capstone2024ccRCC-main/Output/Plots/plot2_methylation.png"), plot2, width = 10, height = 6)
 
 ```
 
 ```{r}
 ##Generating files to combine with mutation data. 
-#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
+#FYI you will need to run lines before running this section 36-40, 48-58, 175-195 
 
 methylation_data_levels = methylation_data %>%
   mutate(Level = case_when(CpG_Value < 0.2 ~ 'low',
