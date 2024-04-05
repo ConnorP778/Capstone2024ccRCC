@@ -32,8 +32,9 @@ Download the TCGA miRNA data found at this link: https://xenabrowser.net/datapag
 Steps for downloading the TCGA mutation data
 1. Navigate to cbioportal.org
 2. Select 'Kidney' in the column on the left side of the website
-3. Choose 'Kidney Renal Clear Cell Carcinoma (TCGA, PanCancer Atlas) in the center column
+3. Choose 'Kidney Renal Clear Cell Carcinoma (TCGA, PanCancer Atlas)' in the center column
 4. Click the 'Explore Selected Studies' button located at the bottom of the website
 5. Once the page loads, locate and click the download button in the top left portion of the webiste, which is situated right next to the title
 6. After downloading, unzip the folder containing the data
-7. Move the unzipped folder to the 'Input' folder within the base directory of your project. The path to the destination folder will be: path_to_TCGA_data <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/')
+7. Move the unzipped folder to the 'Input' folder within the base directory of your project. The path to the destination folder will be:
+   path_to_TCGA_data <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/')
