@@ -2,7 +2,6 @@
 library(tidyverse)
 library(pathwayMultiomics)
 
-
 # Update the base_dir to match where the github repo was downloaded
 base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Capstone2024ccRCC'
 
@@ -65,3 +64,5 @@ kegg_res_df <- kegg_minimax_df %>%
 write.csv(cancer_res_df, file = cancer_minimax_pathway, row.names = FALSE)
 write.csv(hallmark_res_df, file = hallmark_minimax_pathway, row.names = FALSE)
 write.csv(kegg_res_df, file = kegg_minimax_pathway, row.names = FALSE)
+
+
