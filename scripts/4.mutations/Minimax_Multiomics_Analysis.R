@@ -1,6 +1,7 @@
-# script to run MiniMax multiomics analysis
+# script to run MiniMax multiomics analysis (matches original script)
 library(tidyverse)
 library(pathwayMultiomics)
+
 
 # Update the base_dir to match where the github repo was downloaded
 base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation Project/Capstone2024ccRCC'
@@ -13,9 +14,9 @@ hallmark_minimax_pathway <- file.path(base_dir, "Output/Data/Hallmark_Minimax.cs
 
 
 # read in data
-cancer_df <- read.csv(file.path(base_dir, "Output/Plots/Cancer_Analyses_Table.csv"))
-hallmark_df <- read.csv(file.path(base_dir, "Output/Plots/Hallmark_Analyses_Table.csv"))
-kegg_df <- read.csv(file.path(base_dir, "Output/Plots/Kegg_Analyses_Table.csv"))
+cancer_df <- read.csv(file.path(base_dir, "Output/Data/Cancer_Analyses_Table.csv"))
+hallmark_df <- read.csv(file.path(base_dir, "Output/Data/Hallmark_Analyses_Table.csv"))
+kegg_df <- read.csv(file.path(base_dir, "Output/Data/Kegg_Analyses_Table.csv"))
 
 
 # Replace NA values in pval_mut or pval_gsea columns with 1
@@ -64,5 +65,3 @@ kegg_res_df <- kegg_minimax_df %>%
 write.csv(cancer_res_df, file = cancer_minimax_pathway, row.names = FALSE)
 write.csv(hallmark_res_df, file = hallmark_minimax_pathway, row.names = FALSE)
 write.csv(kegg_res_df, file = kegg_minimax_pathway, row.names = FALSE)
-
-

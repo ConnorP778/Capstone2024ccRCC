@@ -1,4 +1,4 @@
-# script to create a table with VHL mutation and methylation status for each patient
+# script to create a table with VHL mutation and methylation status for each patient (matches original script)
 library(dplyr)
 library(tidyr)
 
@@ -8,7 +8,7 @@ base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation P
 path_to_mutations_file <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/data_mutations.txt')
 path_to_methylation_file <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/data_methylation_hm27_hm450_merged.txt')
 path_to_clinical_data_file <- file.path(base_dir, 'Input/TCGA_&_Clinical_Data.tsv')
-output_table_dir <- file.path(base_dir, 'Output/Plots/mut_meth_table.tsv')
+output_table_dir <- file.path(base_dir, 'Output/Data/mut_meth_table.tsv')
 
 
 # read clinical data

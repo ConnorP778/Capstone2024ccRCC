@@ -1,4 +1,4 @@
-# script for mutation frequency and BMI classification logistic regression analysis
+# script for mutation frequency and BMI classification logistic regression analysis (matches original script)
 
 
 # Update the base_dir to match where the github repo was downloaded
