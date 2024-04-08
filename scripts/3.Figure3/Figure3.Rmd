@@ -17,20 +17,21 @@ library(iClusterPlus)
 library(tidyverse)
 library(lattice)
 library(gplots)
+
+#Change this to match your base directory 
+base_dir <- "/Users/elisamcrae/repo/GitHub/Capstone2024ccRCC/"
 ```
 
 
 ```{r}
-meth = fread("HumanMethylation450", sep= "\t")
+met = fread(paste0(base_dir, "scripts/inputs/HumanMethylation450.tsv"), sep = "\t")
+#meth = fread("HumanMethylation450", sep= "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
 
 ```{r}
-#bmi_data = read_csv("KIRC_BMI.csv") %>%
-#  rename("name" = "TCGA Sample Code") %>%
-#  filter(bmi != "underweight")
-bmi_data = read_tsv("TCGA_&_Clinical_Data.tsv")
+bmi_data = read_tsv(file = paste0(base_dir, "scripts/inputs/TCGA_&_Clinical_Data.tsv"))
 bmi_data = rename(bmi_data, "name" = "#Patient Identifier") %>% rename("bmiGroup" = "BMI Group") %>% filter(bmiGroup != "Underweight") %>% select(name, bmiGroup) %>% filter(!is.na(bmiGroup))
 bmi_data <- mutate(bmi_data, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW"))
 bmi_data$name <- gsub("-", ".", bmi_data$name)
@@ -64,7 +65,7 @@ bmi_data = bmi_data %>%
 
 ```{r}
 #Let's load in rna data
-rna = read.csv("KIRC_mRNA_BMI.csv", sep=",")
+rna = read.csv(paste0(base_dir, "scripts/1.Figure1/KIRC_mRNA_BMI.csv"), sep=",")
 common_cols = intersect(colnames(rna), common_cols)
 rna <- rna[, common_cols]
 rna <- rna[, colSums(is.na(rna)) == 0]
@@ -76,7 +77,7 @@ bmi_data = bmi_data %>%
 
 ```{r}
 #Load in mirna data
-mirna <- read_tsv("TCGA-KIRC.mirna.tsv")
+mirna <- read_tsv(paste0(base_dir, "scripts/inputs/TCGA-KIRC.mirna.tsv"))
 
 # Step 1: Remove columns that don't end in -01A
 mirna <- mirna[, grepl("-01A$", colnames(mirna))]
