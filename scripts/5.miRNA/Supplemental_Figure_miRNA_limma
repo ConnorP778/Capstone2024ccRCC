@@ -21,7 +21,7 @@ rownames(exprBT) <- data$miRNA_ID
 colnames(exprBT) <- gsub("\\.", "-", substr(colnames(exprBT), 1, 12))
 
 # Read clinical data
-clinical <- read_tsv(paste0(base_dir, "TCGA_&_Clinical_Data.tsv"))
+clinical <- read_tsv(paste0(base_dir, "scripts/inputs/TCGA_&_Clinical_Data.tsv"))
 clinical <- rename(clinical, c("BMI Group" = "bmiGroup"))
 clinical <- rename(clinical, c("#Patient Identifier" = "TCGA.Sample.Code"))
 clinical <- mutate(clinical, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW")) %>%
