@@ -94,11 +94,11 @@ merged_df <- merged_df[, colSums(is.na(merged_df)) == 0]
 
 
 ```{r}
-fwrite(merged_df, paste0(base_dir, "Output/meth_bmi.csv"))
+fwrite(merged_df, paste0(base_dir, "Output/Data/meth_bmi.csv"))
 ```
 
 ```{r}
-merged_df = fread(paste0(base_dir, "Output/meth_bmi.csv"), sep=",")
+merged_df = fread(paste0(base_dir, "Output/Data/meth_bmi.csv"), sep=",")
 merged_df = as.data.frame(merged_df)
 ```
 
@@ -165,12 +165,12 @@ print("done")
 
 ```{r}
 #Save results from differential methylation analysis
-fwrite(results, paste0(base_dir, "Output/cpg_diff_adj.csv"))
+fwrite(results, paste0(base_dir, "Output/Data/cpg_diff_adj.csv"))
 ```
 
 ```{r}
 #Load results from analysis
-results = fread(paste0(base_dir, "Output/cpg_diff_adj.csv"), sep = ",")
+results = fread(paste0(base_dir, "Output/Data/cpg_diff_adj.csv"), sep = ",")
 ```
 
 ```{r}
@@ -228,9 +228,9 @@ kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot,
 
 ```
 ```{r}
-write.csv(hallmark, paste0(base_dir, "Output/Hallmark_methylGSA_result.csv"))
-write.csv(cancer, paste0(base_dir, "Output/Cancer_methylGSA_result.csv"))
-write.csv(kegg, paste0(base_dir, "Output/Kegg_methylGSA_result.csv"))
+write.csv(hallmark, paste0(base_dir, "Output/Data/Hallmark_methylGSA_result.csv"))
+write.csv(cancer, paste0(base_dir, "Output/Data/Cancer_methylGSA_result.csv"))
+write.csv(kegg, paste0(base_dir, "Output/Data/Kegg_methylGSA_result.csv"))
 ```
 
 
