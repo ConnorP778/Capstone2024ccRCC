@@ -21,8 +21,9 @@ NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a 
 All output, including plots and data will be saved in the "output" folder of this repo. 
 
 ### Figure 1 (mRNA)
-1. Run Figure1_preprocessing.ipynb with "base_dir"
-2. Run Figure1.rmd with "base_dir"
+1. Install and open Jupyter (as step 2 will need to be run in Jupyter notebooks)
+2. Run Figure1_preprocessing.ipynb with "base_dir"
+3. Run Figure1.rmd with "base_dir"
 
 ## Figure 2 (Kaplan-Meier Clinical)
 1. Run Figure2.Rmd with "base_dir"
