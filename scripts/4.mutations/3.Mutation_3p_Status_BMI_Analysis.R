@@ -6,7 +6,7 @@ base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation P
 path_to_arm_level_file <- file.path(base_dir, 'Input/kirc_tcga_pan_can_atlas_2018/data_armlevel_cna.txt')
 path_to_clinical_data_file <- file.path(base_dir, 'Input/TCGA_&_Clinical_Data.tsv')
 output_plot_dir <- file.path(base_dir, 'Output/Plots/mut_3pstatus_plot.pdf')
-mut_meth_path <- file.path(base_dir, 'Output/Plots/mut_meth_table.tsv')
+mut_meth_path <- file.path(base_dir, 'Output/Data/mut_meth_table.tsv')
 
 
 # read clinical data
