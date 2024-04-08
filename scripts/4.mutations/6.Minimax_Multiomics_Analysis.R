@@ -14,9 +14,9 @@ hallmark_minimax_pathway <- file.path(base_dir, "Output/Data/Hallmark_Minimax.cs
 
 
 # read in data
-cancer_df <- read.csv(file.path(base_dir, "Output/Data/Cancer_Analyses_Table.csv"))
-hallmark_df <- read.csv(file.path(base_dir, "Output/Data/Hallmark_Analyses_Table.csv"))
-kegg_df <- read.csv(file.path(base_dir, "Output/Data/Kegg_Analyses_Table.csv"))
+cancer_df <- read.csv(file.path(base_dir, "Output/Plots/Cancer_Analyses_Table.csv"))
+hallmark_df <- read.csv(file.path(base_dir, "Output/Plots/Hallmark_Analyses_Table.csv"))
+kegg_df <- read.csv(file.path(base_dir, "Output/Plots/Kegg_Analyses_Table.csv"))
 
 
 # Replace NA values in pval_mut or pval_gsea columns with 1
