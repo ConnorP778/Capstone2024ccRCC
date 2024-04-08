@@ -120,6 +120,7 @@ merged_df$age = col_data$age_scaled
 ```
 
 ```{r}
+#IMPORTANT: This could take ~2 hours. If you just want the output file, we have put it in the Output folder. Just read section in lines 171-174
 #Let's get a list of all colnames that include cg
 cgs <- grep("cg", colnames(merged_df), value = TRUE)
 
