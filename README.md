@@ -36,8 +36,8 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 1. Run MethylGSA.Rmd with "base_dir"
 
 ### Mutation
-Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time, in the following order:
-1. Mutation_Methylation_Table_Creation.R
+Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time:
+1. Mutation_Methylation_Table_Creation.R	
 	Compare your output with mut_meth_table_comparison.tsv (found in Output/Data)
 2. Mutation_Freq_BMI_Analysis.R
 	Compare output with mut_freq_plot_comparison.pdf (found in Output/Plots)
