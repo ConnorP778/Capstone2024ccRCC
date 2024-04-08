@@ -1,3 +1,4 @@
+install.packages('survminer')
 library(survival)
 library(survminer)
 library(tidyverse)
@@ -5,9 +6,11 @@ library(dplyr)
 library(readr)
 library(forestplot)
 
-data = read_tsv("Input/TCGA_&_Clinical_Data.tsv")
+#Add Base Directory Here
+base_dir = "C:\\Users\\biqe2\\Downloads\\Capstone2024ccRCC-main\\Capstone2024ccRCC-main\\"
 
-base_dir = "" #Add in Your Base Directory Here
+data = read_tsv(paste0(base_dir,"Input/TCGA_&_Clinical_Data.tsv"))
+
 #STEPS
 #1 Add in your base directory and this file will generate both parts of figure 2
 #Namely the kaplan meier survival curve and the cox proportional hazards model
@@ -47,15 +50,6 @@ data_counts <- data %>%
   group_by(`BMI Classification`) %>%
   summarise(Count = n())
 data <- merge(data, data_counts, by = "BMI Classification", all.x = TRUE)
-
-
-counts_Classification <- boxplotData %>%
-  group_by(`BMI Classification`, `Overall Survival Status Classification`) %>%
-  summarise(count = n())
-
-counts_Group <- boxplotData %>%
-  group_by(`BMI Group`, `Overall Survival Status Classification`) %>%
-  summarise(count = n())
 
 set.seed(123)
 data2 <- data.frame(
