@@ -39,7 +39,7 @@ base_dir <- "/Users/badiquinteros/Downloads/"
 ```{r pressure, echo=FALSE}
 ##Download the TCGA-KIRC.methylation450.tsv.gz data from the following link: https://xenabrowser.net/datapages/?dataset=TCGA-KIRC.methylation450.tsv&host=https%3A%2F%2Fgdc.xenahubs.net&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443
 ## Make sure to unzip the folder and put the file into the Input folder in the Capstone2024ccRCC-main folder
-meth = fread(paste0(base_dir, "Capstone2024ccRCC-main/Input/TCGA-KIRC.methylation450.tsv"), sep= "\t")
+meth = fread(paste0(base_dir, "Input/TCGA-KIRC.methylation450.tsv"), sep= "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
@@ -48,7 +48,7 @@ rownames(meth) = meth$`Composite Element REF`
 ```{r, echo=FALSE}
 ##Run Figure 1 script to generate the Figure1_BMI.csv file
 bmi_data = read_csv(paste0(base_dir, "scripts/1.Figure1/Figure1_BMI.csv")) %>%
-  rename('name' = 'TCGA Sample Code')
+  rename("name" = "#Patient Identifier")
 ```
 
 ```{r}
@@ -94,11 +94,11 @@ merged_df <- merged_df[, colSums(is.na(merged_df)) == 0]
 
 
 ```{r}
-fwrite(merged_df, paste0(base_dir, "Capstone2024ccRCC-main/Output/meth_bmi.csv"))
+fwrite(merged_df, paste0(base_dir, "Output/meth_bmi.csv"))
 ```
 
 ```{r}
-merged_df = fread(paste0(base_dir, "Capstone2024ccRCC-main/Output/meth_bmi.csv"), sep=",")
+merged_df = fread(paste0(base_dir, "Output/meth_bmi.csv"), sep=",")
 merged_df = as.data.frame(merged_df)
 ```
 
@@ -164,12 +164,12 @@ print("done")
 
 ```{r}
 #Save results from differential methylation analysis
-fwrite(results, paste0(base_dir, "Capstone2024ccRCC-main/Output/cpg_diff_adj.csv"))
+fwrite(results, paste0(base_dir, "Output/cpg_diff_adj.csv"))
 ```
 
 ```{r}
 #Load results from analysis
-results = fread(paste0(base_dir, "Capstone2024ccRCC-main/Output/cpg_diff_adj.csv"), sep = ",")
+results = fread(paste0(base_dir, "Output/cpg_diff_adj.csv"), sep = ",")
 ```
 
 ```{r}
@@ -200,14 +200,14 @@ names = results$CpG_Site
 obese = results$P_Value.yobese
 
 obese = setNames(obese, names)
-pathways.hallmark <- gmtPathways(paste0(base_dir,"Capstone2024ccRCC-main/Input/pathway_annotationsh.all.v2023.2.Hs.symbols.gmt"))
+pathways.hallmark <- gmtPathways(paste0(base_dir,"Input/pathway_annotations/h.all.v2023.2.Hs.symbols.gmt"))
 
-cancer.pathways.df = read_csv(paste0(base_dir,"Capstone2024ccRCC-main/Input/hallmark.csv"))
+cancer.pathways.df = read_csv(paste0(base_dir,"Input/pathway_annotations/cancer.csv"))
 cancer.pathways_cleaned <- lapply(cancer.pathways.df, function(x) x[!is.na(x)])
 cancer.pathways <- as.list(cancer.pathways_cleaned)
 names(cancer.pathways) <- names(cancer.pathways.df)
 
-pathways.kegg <- gmtPathways("/Users/carternorton/Desktop/RCC/reference/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
+pathways.kegg <- gmtPathways("Input/pathway_annotations/c2.cp.kegg_legacy.v2023.2.Hs.symbols.gmt")
 
 FullAnnot = prepareAnnot(anno_df)
 
@@ -227,9 +227,9 @@ kegg = methylglm(cpg.pval = obese, FullAnnot = FullAnnot,
 
 ```
 ```{r}
-write.csv(hallmark, paste0(base_dir, "Capstone2024ccRCC-main/Output/Hallmark_methylGSA_result.csv"))
-write.csv(cancer, paste0(base_dir, "Capstone2024ccRCC-main/Output/Cancer_methylGSA_result.csv"))
-write.csv(kegg, paste0(base_dir, "Capstone2024ccRCC-main/Output/Kegg_methylGSA_result.csv"))
+write.csv(hallmark, paste0(base_dir, "Output/Hallmark_methylGSA_result.csv"))
+write.csv(cancer, paste0(base_dir, "Output/Cancer_methylGSA_result.csv"))
+write.csv(kegg, paste0(base_dir, "Output/Kegg_methylGSA_result.csv"))
 ```
 
 
@@ -254,7 +254,7 @@ plot1 <- ggplot(methylation_data, aes(x=Meth_Level_methylated)) +
 
 plot1
 
-ggsave(paste0(base_dir, "Capstone2024ccRCC-main/Output/Plots/plot1_methylation.png"), plot1, width = 10, height = 6)
+ggsave(paste0(base_dir, "Output/Plots/plot1_methylation.png"), plot1, width = 10, height = 6)
 
 methylation_data_ = methylation_data %>%
   na.omit()%>%
@@ -273,7 +273,7 @@ plot2 <- ggplot(methylation_data_, aes(x=average)) +
 
 plot2
 
-ggsave(paste0(base_dir, "Capstone2024ccRCC-main/Output/Plots/plot2_methylation.png"), plot2, width = 10, height = 6)
+ggsave(paste0(base_dir, "Output/Plots/plot2_methylation.png"), plot2, width = 10, height = 6)
 
 ```
 
