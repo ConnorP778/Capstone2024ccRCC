@@ -23,6 +23,8 @@ All output, including plots and data will be saved in the "output" folder of thi
 1. Run Figure1_preprocessing.ipynb with "base_dir"
 2. Run Figure1.rmd with "base_dir"
 
+### Figure 3 (iClusterBayes)
+1. Run Figure3.Rmd with "base_dir"
 
 ### miRNA data scripts
 Download the TCGA miRNA data found at this link: https://xenabrowser.net/datapages/?dataset=TCGA-KIRC.mirna.tsv&host=https%3A%2F%2Fgdc.xenahubs.net&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443. Click the first link after the "download" section of the page. Unzip this data. Put this data, together with the TCGA_&_Clinical_Data.tsv file, into a folder that is set as the working directory for R studio. Then run the DESeq2 script found in the miRNA file, making sure the file names match yours. To confirm the DESeq2 results, run the limma script.
