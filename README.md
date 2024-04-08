@@ -38,19 +38,19 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 ### Mutation
 Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time:
 1. Mutation_Methylation_Table_Creation.R	
-	Compare your output with mut_meth_table_comparison.tsv (found in Output/Data)
+	* Compare your output with mut_meth_table_comparison.tsv (found in Output/Data)
 2. Mutation_Freq_BMI_Analysis.R
-	Compare output with mut_freq_plot_comparison.pdf (found in Output/Plots)
+	* Compare output with mut_freq_plot_comparison.pdf (found in Output/Plots)
 3. Mutation_3p_Status_BMI_Analysis.R
-	Compare output with mut_3pstatus_plot_comparison.pdf (found in Output/Plots)
+	* Compare output with mut_3pstatus_plot_comparison.pdf (found in Output/Plots)
 4. Cancer_Kegg_Hallmark_Pathway_Analyses.R
-	Compare output with cancer_mut_BMI_analysis_comparison.csv, hallmark_mut_BMI_analysis_comparison.csv, and kegg_mut_BMI_analysis_comparison.csv (found in Output/Data)
+	* Compare output with cancer_mut_BMI_analysis_comparison.csv, hallmark_mut_BMI_analysis_comparison.csv, and kegg_mut_BMI_analysis_comparison.csv (found in Output/Data)
 5. GSEA_Adj_Mut_Pathway_Tables_Creation.R
-	Compare output with Cancer_Analyses_Table_Comparison.csv, Hallmark_Analyses_Table_Comparison.csv, and Kegg_Analyses_Table_Comparison.csv (found in Output/Plots)
+	* Compare output with Cancer_Analyses_Table_Comparison.csv, Hallmark_Analyses_Table_Comparison.csv, and Kegg_Analyses_Table_Comparison.csv (found in Output/Plots)
 6. Minimax_Multiomics_Analysis.R
-	Compare output with Cancer_Minimax_comparison.csv, Kegg_Minimax_Comparison.csv, and Cancer_Minimax_comparison.csv (found in Output/Data)
+	* Compare output with Cancer_Minimax_comparison.csv, Kegg_Minimax_Comparison.csv, and Cancer_Minimax_comparison.csv (found in Output/Data)
 7. Indel_Proportion_T-test_Analysis.R
-	Compare output with Indel_	Proportion_Boxplot_comparison.pdf (found in Output/Plots)
+	* Compare output with Indel_	Proportion_Boxplot_comparison.pdf (found in Output/Plots)
 
 
 ### Figure 3 (iClusterBayes)
