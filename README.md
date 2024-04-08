@@ -14,7 +14,7 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 
 
 ## RUN
-Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled with numbers. **The folders should be run in this order: 1, 2, 5, 6, 4, 3.** If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
+Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled with numbers. **The folders should be run in this order: 1, 2, 5, 6, 3, 4.** If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
 
 NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a command that takes >15 minutes. If you wish to bypass this command, these scripts will have this line of code annotated with "TIME INTENSE", and optional command immediately afterwards to pre-load in results. 
 
@@ -35,6 +35,9 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 ### Methylation
 1. Run MethylGSA.Rmd with "base_dir"
 
+### Figure 3 (iClusterBayes)
+1. Run Figure3.Rmd with "base_dir"
+
 ### Mutation
 Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time:
 1. Mutation_Methylation_Table_Creation.R	
@@ -51,7 +54,3 @@ Navigate to the scripts/4.mutations directory and run each script, updating "bas
 	* Compare output with Cancer_Minimax_comparison.csv, Kegg_Minimax_Comparison.csv, and Cancer_Minimax_comparison.csv (found in Output/Data)
 7. Indel_Proportion_T-test_Analysis.R
 	* Compare output with Indel_	Proportion_Boxplot_comparison.pdf (found in Output/Plots)
-
-
-### Figure 3 (iClusterBayes)
-1. Run Figure3.Rmd with "base_dir"
