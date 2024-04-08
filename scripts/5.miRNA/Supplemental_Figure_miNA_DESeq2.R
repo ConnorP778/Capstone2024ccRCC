@@ -24,8 +24,9 @@ data <- select(data, -contains(".11"), -miRNA_ID)
 
 # Read clinical data and preprocess
 clinical <- read_tsv(file = paste0(base_dir, "Input/TCGA_&_Clinical_Data.tsv"))
-clinical <- rename(clinical, c("BMI Group" = "bmiGroup"))
-clinical <- rename(clinical, c("#Patient Identifier" = "TCGA.Sample.Code"))
+#If you run into a problem on this line, sometimes this line works one way or the other. Change it to be "bmiGroup" = "BMI Group".
+clinical <- rename(clinical, c("bmiGroup" = "BMI Group"))
+clinical <- rename(clinical, c("TCGA.Sample.Code" = "#Patient Identifier"))
 c2 = clinical
 
 # Mutate and preprocess clinical data
