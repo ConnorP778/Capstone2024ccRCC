@@ -18,7 +18,7 @@ Hooray! You have downloaded all the requisite data, now let's generate results. 
 
 NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a command that takes >15 minutes. If you wish to bypass this command, these scripts will have this line of code annotated with "TIME INTENSE", and optional command immediately afterwards to pre-load in results. 
 
-All output, including plots and data will be saved in the "output" folder of this repo. 
+Outputs, including plots and data, will either be printed out or saved in the "output" folder of this repo. 
 
 ### Figure 1 (mRNA)
 1. Install and open Jupyter (as step 2 will need to be run in Jupyter notebooks)
