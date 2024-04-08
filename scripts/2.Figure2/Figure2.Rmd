@@ -6,24 +6,11 @@ library(readr)
 library(forestplot)
 
 data = read_tsv("Input/TCGA_&_Clinical_Data.tsv")
-# data = read_tsv("Downloads/TCGA_Clinical_Combined_With_BMI.tsv")
 
 quartiles <- quantile(data$`Age at Diagnosis`, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
 
-# mtData = read_csv("Downloads/Supplementary_file_1.csv") %>%
-#   filter(Study=="KIRC") %>%
-#   mutate(`#Patient Identifier` = paste0("TCGA-", `Sample ID`)) %>%
-#   rename(`Mitochondria Log2 Fold Change` = `Log2 Fold Change`) %>%
-#   select(`#Patient Identifier`, `Mitochondria Log2 Fold Change`)
-
-# print(mtData)
-# print(data$`PatientID`)
-# data = full_join(data, mtData)
-# mergedData = full_join(data, mtData)
-#print(data$`Mitochondria Log2 Fold Change`)
-
-
-#BMI Classification vs Tumor Size (Boxplot)
+# Correct column names
+# Add new columns that contain BMI Group, Age group, and Cancer Stage Group
 data$`BMI Classification` = factor(data$`BMI Classification`, 
                                    levels = c('Underweight', 'NW', 'OW', 'OB I', 'OB II', 'OB III'))
 data$Sex = as.factor(toupper(data$Sex))
@@ -44,54 +31,19 @@ data = mutate(data, `Max Tumor Dimension` = as.numeric(`Max Tumor Dimension`)) %
   mutate(`Cancer Stage Group` = factor(`Cancer Stage Group`, levels = c("Stage I/II", "Stage III/IV"))) #%>%
   #write_tsv("Downloads/TCGA_Clinical_Combined_With_BMI.tsv")
 
-
+#Colors for survival curve
 nw_color <- "#56B4E9"  # Pastel Green
 ow_color <- "#009E73"  # Pastel Blue
 ob_colors <- c("#f7c8c9", "#D55E00", "#ff3a3a")  # Gradient of pastel reds
-
 colorBlindFriendly = c("#009E73", "#56B4E9", "#D55E00")
 
-# ggplot(data, aes(x = `BMI Group`, y = `Max Tumor Dimension`, fill = `BMI Group`)) +
-#   geom_boxplot() +
-#   labs(title = "Max Tumor Dimension by BMI Classification",
-#        x = "BMI Classification",
-#        y = "Max Tumor Dimension (units)") +
-#   scale_fill_brewer(palette = "Pastel1") +
-#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
-#   theme_bw() +
-#   scale_fill_manual(values = c(nw_color, ow_color, ob_colors[2]))
 
-# ggplot(data, aes(x = `BMI Group`, y = `Mitochondria Log2 Fold Change`)) +
-#   geom_boxplot() +
-#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
-#   theme_bw()
-
-# ggplot(mergedData, aes(x = `BMI Group`, y = `Mitochondria Log2 Fold Change`)) +
-#   geom_boxplot() +
-#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
-#   theme_bw()
-
-#BMI Classification vs Tumor Size (Boxplot) with count numbers
+#Get BMI Counts
 data_counts <- data %>%
   group_by(`BMI Classification`) %>%
   summarise(Count = n())
 data <- merge(data, data_counts, by = "BMI Classification", all.x = TRUE)
-# ggplot(data, aes(x = `BMI Classification`, y = `Max Tumor Dimension`, fill= )) +
-#   geom_boxplot() +
-#   geom_text(aes(label = Count, y = -Inf), stat = "unique", 
-#             position = position_dodge(width = 0.75), vjust = -0.5) +
-#   labs(title = "Max Tumor Dimension by BMI Classification",
-#        x = "BMI Classification",
-#        y = "Max Tumor Dimension (units)") +
-#   theme_bw() +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#Count of BMI Classification Data
-# ggplot(data, aes(x=`BMI Classification`)) +
-#   geom_bar() +
-#   geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
-#   theme_bw() +
-#   labs(y = "Count")
 
 counts_Classification <- boxplotData %>%
   group_by(`BMI Classification`, `Overall Survival Status Classification`) %>%
@@ -101,14 +53,6 @@ counts_Group <- boxplotData %>%
   group_by(`BMI Group`, `Overall Survival Status Classification`) %>%
   summarise(count = n())
 
-#BoxPlot classes of obesity with survival status (Facet with living, deceased, and both, 5 boxpots)
-# ggplot(data, aes(x = `BMI Classification`, y = `Survival Since Diagnosis (Months)`)) +
-#   geom_boxplot() +
-#   theme_bw() +
-#   facet_wrap(~ `Overall Survival Status Classification`) + 
-#   geom_text(data = counts_Classification, aes(label = count, y = -Inf), 
-#             vjust = -0.5, hjust = 0.5, size = 3, position = position_nudge(x = 0)) +
-#   ggtitle("ccRCC Survival Time by BMI Classification - Boxplot")
 
 #Try with Colors
 set.seed(123)
@@ -123,28 +67,6 @@ ob_colors <- c("#f7c8c9", "#D55E00", "#ff3a3a")  # Gradient of pastel reds
 
 colorBlindFriendly = c("#009E73", "#56B4E9", "#D55E00")
 
-# Plotting
-# ggplot(data, aes(x = `BMI Classification`, y = `Survival Since Diagnosis (Months)`, fill = `BMI Classification`)) +
-#   geom_boxplot() +
-#   theme_bw() +
-#   facet_wrap(~ `Overall Survival Status Classification`) + 
-#   geom_text(data = counts_Classification, aes(x = `BMI Classification`, label = count, y = -Inf), 
-#             vjust = -0.5, hjust = 0.5, size = 3,
-#             position = position_nudge(x = 0)) +
-#   scale_fill_manual(values = c(NW = nw_color, OW = ow_color, 
-#                                `OB I` = ob_colors[1], `OB II` = ob_colors[2], `OB III` = ob_colors[3]))
-  #ggtitle("ccRCC Survival in Months by BMI Classification")
-
-# ggplot(data, aes(x = `BMI Group`, y = `Survival Since Diagnosis (Months)`, fill = `BMI Group`)) +
-#   geom_boxplot() +
-#   theme_bw() +
-#   facet_wrap(~ `Overall Survival Status Classification`) + 
-#   geom_text(data = counts_Group, aes(x = `BMI Group`, label = count, y = -Inf), 
-#             vjust = -0.5, hjust = 0.5, size = 3,
-#             position = position_nudge(x = 0)) +
-#   scale_fill_manual(values = c(NW = nw_color, OW = ow_color, `OB` = ob_colors[2])) +
-#   ggtitle("ccRCC Survival in Months by BMI Classification")
-
 
 #Kaplan meier (4 Kaplan meier NW to OW, OB1,2,3)
 data <- data %>%
@@ -152,16 +74,6 @@ data <- data %>%
   rename(Survival = `Overall Survival Status Number`) %>%
   rename(BMI_Class = `BMI Classification`) %>%
   rename(BMI_Group = `BMI Group`)
-
-print(data$Months)
-
-# fit <- survfit(Surv(Months, Survival) ~ BMI_Class, data = data)
-# ggsurvplot(fit, data = data, pval = TRUE, conf.int = FALSE,
-#            title = "ccRCC Survival by BMI Classification",
-#            xlab = "Time (months)", ylab = "Survival probability",
-#            legend.title = "BMI Classification:",
-#            legend.labs = c("NW", "OW", "OB I", "OB II", "OB III"),
-#            palette = c(nw_color, ow_color, ob_colors))
 
 
 group_sizes <- data %>%
@@ -203,39 +115,6 @@ forest_data <- data.frame(
   lower = conf_intervals[, 1],
   upper = conf_intervals[, 2]
 )
-
-# Create the forest plot
-# library(grid)
-# forestplot(
-#   title = "ccRCC Survival Cox Proportional Hazards Ratio",
-#   mean = (forest_data$HR),
-#   lower = (forest_data$lower),
-#   upper = (forest_data$upper),
-#   labeltext = (forest_data$variables),
-#   #labeltext = c("OW BMI", "OB BMI", paste0("Age Q2: ", ageLevels[2]), paste0("Age Q3: ", ageLevels[3]), paste0("Age Q4: ", ageLevels[4]), "Male", "STAGE II", "STAGE III", "STAGE IV"),
-#   is.summary=c(FALSE, rep(FALSE, nrow(forest_data)-1)),
-#   clip=c(0.1, 6),  # set limits for the x-axis
-#   xticks=c(0.1, 0.5, 1, 2, 3, 4, 5, 6),
-#   refline = 1.0)
-# #grid.lines(x = unit(c(0.5, 0.5), "npc"), y = unit(c(0, 1), "npc"), gp = gpar(col = "red"))
-# 
-# #print(data$`Age Quartile`)
-# 
-# forest_data_long <- tidyr::pivot_longer(forest_data, cols = c(HR, lower, upper), names_to = "Metric", values_to = "Value")
-
-# Create the plot
-# ggplot(data = forest_data, aes(x = variables, y = HR)) +
-#   geom_point(size = 3) +  # This adds the dots for Hazard Ratios
-#   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +  # This adds the whiskers for confidence intervals
-#   coord_flip() +  # Flips the coordinates to make the plot horizontal
-#   theme_minimal() +
-#   labs(title = "ccRCC Survival Cox Proportional Hazards Ratio",
-#        x = "Variables", y = "Hazard Ratio") +
-#   geom_hline(yintercept = 1, linetype = "solid", color = "grey35") +
-#   scale_x_discrete(labels = rev(c("Male\n(Ref: Female)", "OW\n(Ref: NW)", "OB\n(Ref: NW)",
-#                                   "Cancer Stages III/IV\n(Ref: Stages I/II)",
-#                                   "Age Above 60\n(Ref: Age Below 60)")))
-# print(forest_data)
 
 data2 = filter(data, !is.na(`Tumor Grade`)) %>%
   mutate(`Tumor Grade` = factor(`Tumor Grade`, levels = c("G1", "G2", "G3", "G4"))) %>%
