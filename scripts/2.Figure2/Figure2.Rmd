@@ -6,8 +6,22 @@ library(readr)
 library(forestplot)
 
 data = read_tsv("Downloads/TCGA_&_Clinical_Data.tsv")
+#data = read_tsv("Downloads/TCGA_Clinical_Combined_With_BMI.tsv")
 
 quartiles <- quantile(data$`Age at Diagnosis`, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+# mtData = read_csv("Downloads/Supplementary_file_1.csv") %>%
+#   filter(Study=="KIRC") %>%
+#   mutate(`#Patient Identifier` = paste0("TCGA-", `Sample ID`)) %>%
+#   rename(`Mitochondria Log2 Fold Change` = `Log2 Fold Change`) %>%
+#   select(`#Patient Identifier`, `Mitochondria Log2 Fold Change`)
+
+# print(mtData)
+# print(data$`PatientID`)
+# data = full_join(data, mtData)
+# mergedData = full_join(data, mtData)
+#print(data$`Mitochondria Log2 Fold Change`)
+
 
 #BMI Classification vs Tumor Size (Boxplot)
 data$`BMI Classification` = factor(data$`BMI Classification`, 
@@ -17,6 +31,7 @@ data$`Cancer Stage` = factor(toupper(data$`Cancer Stage`), levels = c("STAGE I",
 data = data %>% filter(!is.na(`BMI Classification`))
 data = mutate(data, `Max Tumor Dimension` = as.numeric(`Max Tumor Dimension`)) %>%
   filter(`BMI Classification` != "Underweight") %>%
+  rename(`PatientID` = `#Patient Identifier`) %>%
   mutate(`BMI Group` = case_when(`BMI Classification` %in% c("OB I", "OB II", "OB III") ~ "OB", TRUE ~ `BMI Classification`)) %>%
   mutate(`BMI Group` = factor(toupper(`BMI Group`), levels = c("NW", "OW", "OB"))) %>%
   filter(`Survival Since Diagnosis (Months)` != 0) %>%
@@ -26,11 +41,9 @@ data = mutate(data, `Max Tumor Dimension` = as.numeric(`Max Tumor Dimension`)) %
   mutate(`Cancer Stage Group` = case_when(
       `Cancer Stage` %in% c("STAGE I", "STAGE II") ~ "Stage I/II",
       `Cancer Stage` %in% c("STAGE III", "STAGE IV") ~ "Stage III/IV", TRUE ~ `Cancer Stage`)) %>%
-  mutate(`Cancer Stage Group` = factor(`Cancer Stage Group`, levels = c("Stage I/II", "Stage III/IV"))) %>%
+  mutate(`Cancer Stage Group` = factor(`Cancer Stage Group`, levels = c("Stage I/II", "Stage III/IV"))) #%>%
+  #write_tsv("Downloads/TCGA_Clinical_Combined_With_BMI.tsv")
 
-  write_tsv("Downloads/TCGA_Clinical_Combined_With_BMI.tsv")
-
-print(data$`Tumor Grade`)
 
 nw_color <- "#56B4E9"  # Pastel Green
 ow_color <- "#009E73"  # Pastel Blue
@@ -38,14 +51,25 @@ ob_colors <- c("#f7c8c9", "#D55E00", "#ff3a3a")  # Gradient of pastel reds
 
 colorBlindFriendly = c("#009E73", "#56B4E9", "#D55E00")
 
-ggplot(data, aes(x = `BMI Group`, y = `Max Tumor Dimension`, fill = `BMI Group`)) +
-  geom_boxplot() +
-  labs(title = "Max Tumor Dimension by BMI Classification",
-       x = "BMI Classification",
-       y = "Max Tumor Dimension (units)") +
-  scale_fill_brewer(palette = "Pastel1") +
-  theme_bw() +
-  scale_fill_manual(values = c(nw_color, ow_color, ob_colors[2]))
+# ggplot(data, aes(x = `BMI Group`, y = `Max Tumor Dimension`, fill = `BMI Group`)) +
+#   geom_boxplot() +
+#   labs(title = "Max Tumor Dimension by BMI Classification",
+#        x = "BMI Classification",
+#        y = "Max Tumor Dimension (units)") +
+#   scale_fill_brewer(palette = "Pastel1") +
+#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
+#   theme_bw() +
+#   scale_fill_manual(values = c(nw_color, ow_color, ob_colors[2]))
+
+# ggplot(data, aes(x = `BMI Group`, y = `Mitochondria Log2 Fold Change`)) +
+#   geom_boxplot() +
+#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
+#   theme_bw()
+
+# ggplot(mergedData, aes(x = `BMI Group`, y = `Mitochondria Log2 Fold Change`)) +
+#   geom_boxplot() +
+#   stat_summary(fun=mean, color ="#FDAE6B", shape = 23, fill ="#FDAE6B") +
+#   theme_bw()
 
 #BMI Classification vs Tumor Size (Boxplot) with count numbers
 data_counts <- data %>%
@@ -111,15 +135,15 @@ colorBlindFriendly = c("#009E73", "#56B4E9", "#D55E00")
 #                                `OB I` = ob_colors[1], `OB II` = ob_colors[2], `OB III` = ob_colors[3]))
   #ggtitle("ccRCC Survival in Months by BMI Classification")
 
-ggplot(data, aes(x = `BMI Group`, y = `Survival Since Diagnosis (Months)`, fill = `BMI Group`)) +
-  geom_boxplot() +
-  theme_bw() +
-  facet_wrap(~ `Overall Survival Status Classification`) + 
-  geom_text(data = counts_Group, aes(x = `BMI Group`, label = count, y = -Inf), 
-            vjust = -0.5, hjust = 0.5, size = 3,
-            position = position_nudge(x = 0)) +
-  scale_fill_manual(values = c(NW = nw_color, OW = ow_color, `OB` = ob_colors[2])) +
-  ggtitle("ccRCC Survival in Months by BMI Classification")
+# ggplot(data, aes(x = `BMI Group`, y = `Survival Since Diagnosis (Months)`, fill = `BMI Group`)) +
+#   geom_boxplot() +
+#   theme_bw() +
+#   facet_wrap(~ `Overall Survival Status Classification`) + 
+#   geom_text(data = counts_Group, aes(x = `BMI Group`, label = count, y = -Inf), 
+#             vjust = -0.5, hjust = 0.5, size = 3,
+#             position = position_nudge(x = 0)) +
+#   scale_fill_manual(values = c(NW = nw_color, OW = ow_color, `OB` = ob_colors[2])) +
+#   ggtitle("ccRCC Survival in Months by BMI Classification")
 
 
 #Kaplan meier (4 Kaplan meier NW to OW, OB1,2,3)
@@ -150,7 +174,7 @@ group_labels <- setNames(group_sizes$Count, group_sizes$BMI_Group)
 fit <- survfit(Surv(Months, Survival) ~ BMI_Group, data = data)
 custom_legend_labs <- sapply(levels(data$BMI_Group), function(x) paste(x, " (", group_labels[x], ")", sep=""))
 
-ggsurvplot(fit, data = data, pval = TRUE, conf.int = FALSE,
+survPlot = ggsurvplot(fit, data = data, pval = TRUE, conf.int = FALSE,
            title = paste("ccRCC Survival by BMI Group (", totalObservations, ")", sep = ""),
            #title = NULL,
            break.time.by = 12,
@@ -162,6 +186,9 @@ ggsurvplot(fit, data = data, pval = TRUE, conf.int = FALSE,
            risk.table.col = "strata",
            tables.theme = theme_cleantable(),
            palette = c(nw_color, ow_color, ob_colors[2]))#c("black", "black", "black"))
+
+survPlot$plot = survPlot$plot + theme(legend.title = element_text(size = 12))  # Adjust the size to your preference
+print(survPlot)
 
 cox_model = coxph(Surv(Months, Survival) ~ BMI_Group + `Above or Below 60` + Sex + `Cancer Stage Group`, data = data) # + `Tumor Grade`
 summary(cox_model)
@@ -197,18 +224,18 @@ forest_data <- data.frame(
 # forest_data_long <- tidyr::pivot_longer(forest_data, cols = c(HR, lower, upper), names_to = "Metric", values_to = "Value")
 
 # Create the plot
-ggplot(data = forest_data, aes(x = variables, y = HR)) +
-  geom_point(size = 3) +  # This adds the dots for Hazard Ratios
-  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +  # This adds the whiskers for confidence intervals
-  coord_flip() +  # Flips the coordinates to make the plot horizontal
-  theme_minimal() +
-  labs(title = "ccRCC Survival Cox Proportional Hazards Ratio",
-       x = "Variables", y = "Hazard Ratio") +
-  geom_hline(yintercept = 1, linetype = "solid", color = "grey35") +
-  scale_x_discrete(labels = rev(c("Male\n(Ref: Female)", "OW\n(Ref: NW)", "OB\n(Ref: NW)",
-                                  "Cancer Stages III/IV\n(Ref: Stages I/II)",
-                                  "Age Above 60\n(Ref: Age Below 60)")))
-print(forest_data)
+# ggplot(data = forest_data, aes(x = variables, y = HR)) +
+#   geom_point(size = 3) +  # This adds the dots for Hazard Ratios
+#   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +  # This adds the whiskers for confidence intervals
+#   coord_flip() +  # Flips the coordinates to make the plot horizontal
+#   theme_minimal() +
+#   labs(title = "ccRCC Survival Cox Proportional Hazards Ratio",
+#        x = "Variables", y = "Hazard Ratio") +
+#   geom_hline(yintercept = 1, linetype = "solid", color = "grey35") +
+#   scale_x_discrete(labels = rev(c("Male\n(Ref: Female)", "OW\n(Ref: NW)", "OB\n(Ref: NW)",
+#                                   "Cancer Stages III/IV\n(Ref: Stages I/II)",
+#                                   "Age Above 60\n(Ref: Age Below 60)")))
+# print(forest_data)
 
 data2 = filter(data, !is.na(`Tumor Grade`)) %>%
   mutate(`Tumor Grade` = factor(`Tumor Grade`, levels = c("G1", "G2", "G3", "G4"))) %>%
@@ -228,10 +255,10 @@ print(summary(anova_result))
 
 cox_model2 <- coxph(Surv(Months, Survival) ~ BMI_Group + `Above or Below 60` + Sex + `Cancer Stage Group` + `Tumor Grade Group`, data = data2)
 
-summary(cox_model2)
+# summary(cox_model2)
 
-hazard_ratios2 <- exp(coef(cox_model2))
-conf_intervals2 <- exp(confint(cox_model2))
+# hazard_ratios2 <- exp(coef(cox_model2))
+# conf_intervals2 <- exp(confint(cox_model2))
 
 # Create a data frame for forest plot
 forest_data2 <- data.frame(
@@ -241,7 +268,7 @@ forest_data2 <- data.frame(
   upper = conf_intervals2[, 2]
 )
 
-p_values <- summary(cox_model2)$coefficients[, "Pr(>|z|)"]
+# p_values <- summary(cox_model2)$coefficients[, "Pr(>|z|)"]
 
 significance_levels <- c("***", "**", "*")  # You can customize this based on your preference
 
@@ -265,15 +292,3 @@ ggplot(data = forest_data2, aes(x = variables, y = HR, label = significance)) +
   annotate("text", x = 5.5, y = 3.55, label = "* = p < 0.05  \n*** = p < 0.001", hjust = 1, size = 3)
 
 print(forest_data2)
-
-
-#TODO: With grade (Add GX?)
-#Combine Cancer stages
-#MT Kaplan Meier figure (with Cancer?)
-
-
-#TODO: Stages I&II to III to IV with BMI with normal log/linear reg (Table 2)
-
-#separate(col = `Overall Survival Status`, into = c("Number", "Status"), sep = ":")
-#OBesity and stages
-#Link that to metabolic pathways (more angiogenesis?, MT CNA)
