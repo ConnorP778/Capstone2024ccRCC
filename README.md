@@ -25,14 +25,14 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 2. Run Figure1_preprocessing.ipynb with "base_dir"
 3. Run Figure1.rmd with "base_dir"
 
-## Figure 2 (Kaplan-Meier Clinical)
+### Figure 2 (Kaplan-Meier Clinical)
 1. Run Figure2.Rmd with "base_dir"
 
 ### miRNA
 1. Run Supplemental_Figure_miNA_DESeq2.R with "base_dir"
 2. Run Supplemental_Figure_miRNA_limma.R with "base_dir". Note that this file does not have an output, just a print statement with results from the limma test.
 
-## Methylation
+### Methylation
 1. Run MethylGSA.Rmd with "base_dir"
 
 ### Mutation
