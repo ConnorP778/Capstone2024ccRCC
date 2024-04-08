@@ -71,7 +71,9 @@ volcano = ggplot(de_proteins, aes(x = logFC, y = -log10(adj.P.Val))) +
   labs(x = "Log2 Fold Change", y = "-log10(Adjusted P-value)") +
   theme_bw()
 
-
+# Save the plot
+output_file <- paste0(base_dir, "/Output/Plots/rppa_plot.png")
+ggsave(filename = output_file, plot = volcano, width = 8, height = 6, dpi = 300)
 
 
 
