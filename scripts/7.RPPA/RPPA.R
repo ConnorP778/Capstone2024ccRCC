@@ -14,7 +14,7 @@ new_col_names <- gsub("\\.", "-", substr(col_names, 1, nchar(col_names) - 3))
 # Assign the new column names to the RPPA data table
 colnames(rppa_data) <- new_col_names
 
-clinical_data = read_tsv("Input/TCGA_&_Clinical_Data.txt")
+clinical_data = read_tsv("Input/TCGA_&_Clinical_Data.tsv")
 
 clinical_data = rename(clinical_data, BMI_Group = 'BMI Group')
 clinical_data = rename(clinical_data, Patient_ID = '#Patient Identifier')
