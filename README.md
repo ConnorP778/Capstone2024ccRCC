@@ -11,6 +11,7 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 3. mRNA Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.htseq_counts.tsv.gz
 4. DNA 450k methylation Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.methylation450.tsv.gz
 5. Mutation Data - https://cbioportal-datahub.s3.amazonaws.com/kirc_tcga_pan_can_atlas_2018.tar.gz
+6. RPPA Data - "data_rppa.txt" within the folder downloaded on step 5
 
 
 ## RUN
@@ -37,6 +38,9 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 
 ### Figure 3 (iClusterBayes)
 1. Run Figure3.Rmd with "base_dir"
+
+### RPPA
+1. Run "RPPA.R" with "base_dir"
 
 ### Mutation
 Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time:
