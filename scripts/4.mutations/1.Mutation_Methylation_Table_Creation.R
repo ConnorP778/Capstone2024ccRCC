@@ -1,4 +1,10 @@
 # script to create a table with VHL mutation and methylation status for each patient (matches original script)
+
+
+# install packages, if you don't already have them
+install.packages("dplyr")
+install.packages("tidyr")
+
 library(dplyr)
 library(tidyr)
 
