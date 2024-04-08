@@ -9,9 +9,9 @@ base_dir <- '/Users/tufts/OneDrive/Winter 2024/Bioinformatic Capstone/Mutation P
 
 
 # read in data
-mut_kegg <- read.csv(file.path(base_dir, 'Output/Plots/kegg_mut_BMI_analysis.csv'))
-mut_hallmark <- read.csv(file.path(base_dir, 'Output/Plots/hallmark_mut_BMI_analysis.csv'))
-mut_cancer <- read.csv(file.path(base_dir, 'Output/Plots/cancer_mut_BMI_analysis.csv'))
+mut_kegg <- read.csv(file.path(base_dir, 'Output/Data/kegg_mut_BMI_analysis.csv'))
+mut_hallmark <- read.csv(file.path(base_dir, 'Output/Data/hallmark_mut_BMI_analysis.csv'))
+mut_cancer <- read.csv(file.path(base_dir, 'Output/Data/cancer_mut_BMI_analysis.csv'))
 gsea_kegg <- read.csv(file.path(base_dir, 'Output/Data/KEGG_Pathways_GSEA.csv'))
 gsea_hallmark <-read.csv(file.path(base_dir, 'Output/Data/Hallmark_Pathways_GSEA.csv'))
 gsea_cancer <- read.csv(file.path(base_dir, 'Output/Data/Cancer_Pathways_GSEA.csv'))
