@@ -24,14 +24,14 @@ base_dir <- "/Users/elisamcrae/repo/GitHub/Capstone2024ccRCC/"
 
 
 ```{r}
-met = fread(paste0(base_dir, "scripts/inputs/HumanMethylation450.tsv"), sep = "\t")
-#meth = fread("HumanMethylation450", sep= "\t")
+met = fread(paste0(base_dir, "Input/HumanMethylation450.tsv"), sep = "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
 
 ```{r}
-bmi_data = read_tsv(file = paste0(base_dir, "scripts/inputs/TCGA_&_Clinical_Data.tsv"))
+bmi_data = read_tsv(file = paste0(base_dir, "Input/TCGA_&_Clinical_Data.tsv"))
+#As in the miRNA figures, if you get an error, change the order of the renaming groups
 bmi_data = rename(bmi_data, "name" = "#Patient Identifier") %>% rename("bmiGroup" = "BMI Group") %>% filter(bmiGroup != "Underweight") %>% select(name, bmiGroup) %>% filter(!is.na(bmiGroup))
 bmi_data <- mutate(bmi_data, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW"))
 bmi_data$name <- gsub("-", ".", bmi_data$name)
