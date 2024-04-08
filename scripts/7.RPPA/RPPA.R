@@ -4,7 +4,7 @@ library(tidyverse)
 base_dir <- "/Users/ConnorP778/repo/GitHub/Capstone2024ccRCC"
 
 
-rppa_data = read.table(file = paste0(base_dir, "data_rppa.txt"), header=TRUE, row.names=1, na.strings="NA", sep="\t")
+rppa_data = read.table(file = paste0(base_dir, "Input/kirc_tcga_pan_can_atlas_2018/data_rppa.txt"), header=TRUE, row.names=1, na.strings="NA", sep="\t")
 
 col_names <- colnames(rppa_data)
 
