@@ -7,6 +7,8 @@ library(forestplot)
 
 data = read_tsv("Input/TCGA_&_Clinical_Data.tsv")
 
+base_dir = "" #Add in Your Base Directory Here
+
 quartiles <- quantile(data$`Age at Diagnosis`, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
 
 # Correct column names
@@ -99,7 +101,11 @@ survPlot = ggsurvplot(fit, data = data, pval = TRUE, conf.int = FALSE,
            tables.theme = theme_cleantable(),
            palette = c(nw_color, ow_color, ob_colors[2]))#c("black", "black", "black"))
 
-survPlot$plot = survPlot$plot + theme(legend.title = element_text(size = 12))  # Adjust the size to your preference
+ggsave(paste0(base_dir, "Output/Plots/ccRCC_KaplanMeier_Table.png"), device = "png", width = 8, height = 3)
+
+survPlot$plot = survPlot$plot + theme(legend.title = element_text(size = 12))
+ggsave(paste0(base_dir, "Output/Plots/ccRCC_KaplanMeier_Curve.png"), plot = survPlot$plot, device = "png", width = 8, height = 6, dpi = 300)
+
 print(survPlot)
 
 cox_model = coxph(Surv(Months, Survival) ~ BMI_Group + `Above or Below 60` + Sex + `Cancer Stage Group`, data = data) # + `Tumor Grade`
@@ -169,5 +175,7 @@ ggplot(data = forest_data2, aes(x = variables, y = HR, label = significance)) +
                                   "Tumor Grades G3/G4\n(Ref: Grades G1/G2)", "Cancer Stages III/IV\n(Ref: Stages I/II)",
                                   "Age Above 60\n(Ref: Age Below 60)"))) + #, "Grade 2", "Grade 3", "Grade 4"
   annotate("text", x = 5.5, y = 3.55, label = "* = p < 0.05  \n*** = p < 0.001", hjust = 1, size = 3)
+
+ggsave(paste0(base_dir, "Output/Plots/ccRCC_coxPropModel.png"), device = "png", height = 8)
 
 print(forest_data2)
