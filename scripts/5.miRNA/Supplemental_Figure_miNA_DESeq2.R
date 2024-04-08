@@ -16,14 +16,14 @@ library(BiocManager)
 base_dir <- "/Users/elisamcrae/repo/GitHub/Capstone2024ccRCC/"
 
 # Read data
-data <- read.table(file = paste0(base_dir, "scripts/inputs/TCGA-KIRC.mirna.tsv"), header = TRUE)
+data <- read.table(file = paste0(base_dir, "inputs/TCGA-KIRC.mirna.tsv"), header = TRUE)
 miRNA_ID = data$miRNA_ID
 
 # Clean data
 data <- select(data, -contains(".11"), -miRNA_ID)
 
 # Read clinical data and preprocess
-clinical <- read_tsv(file = paste0(base_dir, "scripts/inputs/TCGA_&_Clinical_Data.tsv"))
+clinical <- read_tsv(file = paste0(base_dir, "inputs/TCGA_&_Clinical_Data.tsv"))
 clinical <- rename(clinical, c("BMI Group" = "bmiGroup"))
 clinical <- rename(clinical, c("#Patient Identifier" = "TCGA.Sample.Code"))
 c2 = clinical
