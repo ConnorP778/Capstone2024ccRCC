@@ -123,3 +123,6 @@ volcano_plot <- ggplot(res, aes(x = log2FoldChange, y = -log10(pvalue))) +
   labs(x = ~Log[2]*" Fold Change", y = ~-Log[10]*"(p-value)", title = NULL) #+
 
 print(volcano_plot)
+
+ggsave("miRNA_Volcano_Plot.png", plot = p, width = 6, height = 4, dpi = 300)
+
