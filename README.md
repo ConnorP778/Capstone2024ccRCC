@@ -15,7 +15,7 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 7. mtDNA Data - Download "Supplementary file 1" at https://elifesciences.org/articles/10769/figures#SD4-data. You can also find the link in this paper https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4775221/.
 
 ## RUN
-Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled with numbers. **The folders should be run in this order: 1, 2, 5, 6, 3, 4.** If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
+Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled with numbers. **The folders should be run in this order: 1, 2, 5, 6, 3, 7, 8, 4.** If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
 
 NOTE: some scripts may include "TIME_INTENSE" in their name. If so, they have a command that takes >15 minutes. If you wish to bypass this command, these scripts will have this line of code annotated with "TIME INTENSE", and optional command immediately afterwards to pre-load in results. 
 
