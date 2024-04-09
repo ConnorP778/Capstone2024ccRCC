@@ -128,8 +128,8 @@ cox_model2 <- coxph(Surv(Months, Survival) ~ BMI_Group + `Above or Below 60` + S
 
 # summary(cox_model2)
 
-# hazard_ratios2 <- exp(coef(cox_model2))
-# conf_intervals2 <- exp(confint(cox_model2))
+hazard_ratios2 <- exp(coef(cox_model2))
+conf_intervals2 <- exp(confint(cox_model2))
 
 # Create a data frame for forest plot
 forest_data2 <- data.frame(
@@ -139,7 +139,7 @@ forest_data2 <- data.frame(
   upper = conf_intervals2[, 2]
 )
 
-# p_values <- summary(cox_model2)$coefficients[, "Pr(>|z|)"]
+p_values <- summary(cox_model2)$coefficients[, "Pr(>|z|)"]
 
 significance_levels <- c("***", "**", "*")  # You can customize this based on your preference
 
@@ -152,11 +152,11 @@ ggplot(data = forest_data2, aes(x = variables, y = HR, label = significance)) +
   geom_point(size = 3) +  # This adds the dots for Hazard Ratios
   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +  # This adds the whiskers for confidence intervals
   coord_flip() +  # Flips the coordinates to make the plot horizontal
-  theme_minimal() +
+  theme_bw() +
   geom_text(aes(label = significance), vjust = -0.5, color = "black", size = 4) +  # Adjust vjust to position text
   labs(x = "Variables", y = "Hazard Ratio") +
   geom_hline(yintercept = 1, linetype = "solid", color = "grey35") +
-  scale_y_continuous(breaks = seq(floor(min(forest_data$HR)), ceiling(max(forest_data$upper)), by = 0.5)) +
+  scale_y_continuous(breaks = seq(floor(min(forest_data2$HR)), ceiling(max(forest_data2$upper)), by = 0.5)) +
   scale_x_discrete(labels = rev(c("Male\n(Ref: Female)", "OW\n(Ref: NW)", "OB\n(Ref: NW)",
                                   "Tumor Grades G3/G4\n(Ref: Grades G1/G2)", "Cancer Stages III/IV\n(Ref: Stages I/II)",
                                   "Age Above 60\n(Ref: Age Below 60)"))) + #, "Grade 2", "Grade 3", "Grade 4"
