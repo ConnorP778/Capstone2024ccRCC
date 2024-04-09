@@ -47,9 +47,29 @@ colorBlindFriendly = c("#009E73", "#56B4E9", "#D55E00")
 
 #Get BMI Counts
 data_counts <- data %>%
-  group_by(`BMI Classification`) %>%
+  group_by(`BMI Group`) %>%
   summarise(Count = n())
-data <- merge(data, data_counts, by = "BMI Classification", all.x = TRUE)
+data <- merge(data, data_counts, by = "BMI Group", all.x = TRUE)
+
+ggplot(data, aes(x=`BMI Group`)) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  theme_bw() +
+  labs(y = "Count")
+ggsave(paste0(base_dir, "Output/Plots/ccRCC_BMI_Histogram.png"), device = "png", height = 8)
+
+summary_data <- data %>%
+  group_by(`BMI Group`) %>%
+  summarise(mean_BMI = mean(`BMI`), count = n())
+
+ggplot(data, aes(x = `BMI Group`, y = `BMI`)) +
+  #geom_point(position = position_jitter(width = 0.2), size = 2, alpha = 0.5) +
+  geom_violin(alpha = 0.3) +
+  stat_summary(fun=mean, geom="point", shape=23, size=3, fill="orange") + 
+  geom_text(data = summary_data, aes(label = count, y = mean_BMI), vjust = 2) +
+  theme_bw()
+ggsave(paste0(base_dir, "Output/Plots/ccRCC_BMI_ViolinPlot.png"), device = "png", height = 8)
+
 
 set.seed(123)
 data2 <- data.frame(
