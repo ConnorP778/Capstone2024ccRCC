@@ -2,7 +2,10 @@ library(tidyverse)
 library(dplyr)
 library(readr)
 
-data = read_tsv("Downloads/TCGA_&_Clinical_Data.tsv") %>%
+#TODO: Change to your own base directory
+base_dir = ""
+
+data = read_tsv(paste0(base_dir, "Input/TCGA_&_Clinical_Data.tsv") %>%
   filter(`BMI Classification` != "Underweight")
 
 mtData = read_csv("Downloads/Supplementary_file_1.csv") %>%
@@ -10,9 +13,6 @@ mtData = read_csv("Downloads/Supplementary_file_1.csv") %>%
   mutate(`#Patient Identifier` = paste0("TCGA-", `Sample ID`)) %>%
   rename(`Mitochondria Log2 Fold Change` = `Log2 Fold Change`) %>%
   select(`#Patient Identifier`, `Mitochondria Log2 Fold Change`)
-
-#TODO: Change to your own base directory
-base_dir = ""
 
 mergedData = full_join(data, mtData)
 
