@@ -62,3 +62,6 @@ Navigate to the scripts/4.mutations directory and run each script, updating "bas
 	* Compare output with Cancer_Minimax_comparison.csv, Kegg_Minimax_Comparison.csv, and Cancer_Minimax_comparison.csv (found in Output/Data)
 7. Indel_Proportion_T-test_Analysis.R
 	* Compare output with Indel_	Proportion_Boxplot_comparison.pdf (found in Output/Plots)
+
+### MTDNA
+1. Run "MTDNA_CopyNumberAnalysis.Rmd" with "base_dir"
