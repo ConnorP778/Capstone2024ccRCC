@@ -28,6 +28,7 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 
 ### Figure 2 (Kaplan-Meier Clinical, BMI distribution)
 1. Run Figure2.Rmd with "base_dir". *Note that the plots will all output into the output/plots folder except for the kaplan meier because it is composed of a graph and text and is not compatible with ggsave. When run in R-studio you can still see the plot just fine and Dr. Payne said that would be okay.
+2. Make sure to install the forestplot and survminer packages if they do not already exist
 
 ### miRNA
 1. Run Supplemental_Figure_miNA_DESeq2.R with "base_dir"
