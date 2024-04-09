@@ -12,7 +12,7 @@ The analyses in this project rely on data from The Cancer Genome Atlas (TCGA). Y
 4. DNA 450k methylation Data - https://gdc-hub.s3.us-east-1.amazonaws.com/download/TCGA-KIRC.methylation450.tsv.gz
 5. Mutation Data - https://cbioportal-datahub.s3.amazonaws.com/kirc_tcga_pan_can_atlas_2018.tar.gz
 6. RPPA Data - "data_rppa.txt" within the folder downloaded on step 5
-
+7. mtDNA Data - Download "Supplementary file 1" at https://elifesciences.org/articles/10769/figures#SD4-data. You can also find the link in this paper https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4775221/.
 
 ## RUN
 Hooray! You have downloaded all the requisite data, now let's generate results. The folders for generating each figure are labeled with numbers. **The folders should be run in this order: 1, 2, 5, 6, 3, 4.** If a figure requires multiple scripts, the scripts will be labeled in order as well (ie 1.datapreprocessing should be run first). **Each script will only have one variable that needs to be modified, called "base_dir". This will be the path to wherever you are storing this repo.** Be sure to include "/" at the end of the base_dir variable. 
