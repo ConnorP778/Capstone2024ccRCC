@@ -24,7 +24,7 @@ base_dir <- "/Users/elisamcrae/repo/GitHub/Capstone2024ccRCC/"
 
 
 ```{r}
-met = fread(paste0(base_dir, "Input/HumanMethylation450.tsv"), sep = "\t")
+meth = fread(paste0(base_dir, "Input/HumanMethylation450.tsv"), sep = "\t")
 meth <- as.data.frame(meth)
 rownames(meth) = meth$`Composite Element REF`
 ```
@@ -158,7 +158,6 @@ plotHMBayes(result, datasets, type = c("gaussian", "gaussian", "gaussian"), samp
 clusters = result$clusters
 bmi_data$Cluster = as.vector(clusters)
 
-
 #Chisquare Test
 tidy_data <- bmi_data %>% mutate(bmiGroup = factor(bmiGroup)) %>% 
   dplyr::count(Cluster, bmiGroup) %>%
@@ -169,17 +168,17 @@ p_value = chisq_result$p.value
 
 # Count observations in each combination of cluster assignment and BMI category
 count_data <- bmi_data %>%
-  group_by(Cluster, bmiGroup) %>%
+  group_by(bmiGroup, Cluster) %>%
   summarise(Count = n()) %>%
-  group_by(bmiGroup) %>%
+  group_by(Cluster) %>%
   mutate(Percentage = (Count / sum(Count)) * 100)
 
 count_data <- count_data %>% mutate(bmi = factor(bmiGroup)) #%>% mutate(bmi = fct_recode(bmiGroup, Normal = "normal", Overweight = "overweight",Obese= "obese"))
 
 # Plot the data
-p = ggplot(count_data, aes(x = bmiGroup, y = Percentage, fill = factor(Cluster))) +
+p = ggplot(count_data, aes(x = factor(Cluster), y = Percentage, fill = factor(bmiGroup))) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(x = "", y = "Percentage Per Cluster", fill = "Cluster Assignment") +
+  labs(x = "", y = "Percentage Per Cluster", fill = "BMI Assignment") +
   theme_minimal() +
   theme(axis.text.x = element_text(size = 12),  # Adjust x-axis label size
         axis.text.y = element_text(size = 12))   # Adjust y-axis label size
@@ -193,5 +192,4 @@ p <- p +
 print(p)
 
 ggsave("bayes_clusters.png", plot = p, width = 6, height = 4, dpi = 300)
-
 ```
