@@ -1,6 +1,14 @@
 #https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0267291#sec006
 #https://blog.devgenius.io/differential-gene-expression-analysis-using-limma-step-by-step-358da9d41c4e
 
+# Package names
+packages <- c("dplyr", "limma", "tidyverse", "BiocManager", "DESeq2", "edgeR")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
 # Load necessary libraries
 library(dplyr)
 library(limma)
@@ -21,9 +29,9 @@ rownames(exprBT) <- data$miRNA_ID
 colnames(exprBT) <- gsub("\\.", "-", substr(colnames(exprBT), 1, 12))
 
 # Read clinical data
-clinical <- read_tsv(paste0(base_dir, "scripts/inputs/TCGA_&_Clinical_Data.tsv"))
-clinical <- rename(clinical, c("BMI Group" = "bmiGroup"))
-clinical <- rename(clinical, c("#Patient Identifier" = "TCGA.Sample.Code"))
+clinical <- read_tsv(paste0(base_dir, "Input/TCGA_&_Clinical_Data.tsv"))
+clinical <- rename(clinical, c("bmiGroup" = "BMI Group"))
+clinical <- rename(clinical, c("TCGA.Sample.Code" = "#Patient Identifier"))
 clinical <- mutate(clinical, bmiGroup = fct_recode(bmiGroup, "Normal" = "NW", "Obese" = "OB", "Overweight" = "OW")) %>%
   select(TCGA.Sample.Code, bmiGroup) %>%
   filter(!is.na(bmiGroup)) %>% filter(bmiGroup == "Obese" | bmiGroup == "Normal")

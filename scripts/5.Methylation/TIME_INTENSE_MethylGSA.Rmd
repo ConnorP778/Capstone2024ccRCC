@@ -120,6 +120,7 @@ merged_df$age = col_data$age_scaled
 ```
 
 ```{r}
+### TIME INTENSE ###
 #IMPORTANT: This could take ~2 hours. If you just want the output file, it is on box. Download and put it 
 # in Output/Data. Just read section in lines 172-175
 #Let's get a list of all colnames that include cg

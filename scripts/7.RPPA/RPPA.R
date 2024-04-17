@@ -7,7 +7,7 @@ library(tidyverse)
 library(limma)
 
 # Change this to match your base directory
-base_dir <- "/Users/ConnorP778/repo/GitHub/Capstone2024ccRCC"
+base_dir <- "/Users/ConnorP778/repo/GitHub/Capstone2024ccRCC/"
 
 
 rppa_data = read.table(file = paste0(base_dir, "Input/kirc_tcga_pan_can_atlas_2018/data_rppa.txt"), header=TRUE, row.names=1, na.strings="NA", sep="\t")
@@ -72,7 +72,7 @@ volcano = ggplot(de_proteins, aes(x = logFC, y = -log10(adj.P.Val))) +
   theme_bw()
 
 # Save the plot
-output_file <- paste0(base_dir, "/Output/Plots/rppa_plot.png")
+output_file <- paste0(base_dir, "Output/Plots/rppa_plot.png")
 ggsave(filename = output_file, plot = volcano, width = 8, height = 6, dpi = 300)
 
 

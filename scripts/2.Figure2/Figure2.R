@@ -1,5 +1,5 @@
 install.packages('survminer')
-install.packages('forestplot)
+install.packages('forestplot')
 
 library(survival)
 library(survminer)
