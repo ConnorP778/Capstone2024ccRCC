@@ -235,17 +235,15 @@ write.csv(cancer, paste0(base_dir, "Output/Data/Cancer_methylGSA_result.csv"))
 write.csv(kegg, paste0(base_dir, "Output/Data/Kegg_methylGSA_result.csv"))
 ```
 
-
-
-
 ```{r}
 ##Methylation Assingment hig, mid, low
-#FYI you will need to run lines before running this section 36-40, 48-58, 175-195 
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
 
 meth$ENTITY_STABLE_ID <- row.names(meth) 
 anno_df = anno_df %>%
   rename(ENTITY_STABLE_ID = "CpG")%>%
   na.omit()
+
 
 meth_genes = inner_join(meth,anno_df, by = "ENTITY_STABLE_ID")
 
@@ -255,9 +253,9 @@ methylation_data = meth_genes %>%
 plot1 <- ggplot(methylation_data, aes(x=Meth_Level_methylated)) + 
   geom_histogram()
 
-plot1
 
-ggsave(paste0(base_dir, "Output/Plots/plot1_methylation.png"), plot1, width = 10, height = 6)
+
+ggsave(paste0("/Users/badiquinteros/Downloads/plot1_methylation_comparison.png"), plot1, width = 10, height = 6)
 
 methylation_data_ = methylation_data %>%
   na.omit()%>%
@@ -267,22 +265,20 @@ methylation_data_ = methylation_data %>%
   summarise(average = mean(mean_meth)) %>%
   mutate(methylation = case_when(average < 0.2 ~ 'low',
                           average <= 0.5 ~ 'med',
-                          average > 0.5 ~ 'high'))%>%
-  na.omit()
+                          average > 0.5 ~ 'high'))
 
 
 plot2 <- ggplot(methylation_data_, aes(x=average)) + 
   geom_histogram()
 
-plot2
 
-ggsave(paste0(base_dir, "Output/Plots/plot2_methylation.png"), plot2, width = 10, height = 6)
+ggsave(paste0("/Users/badiquinteros/Downloads/plot2_methylation_comparison.png"), plot2, width = 10, height = 6)
 
 ```
 
 ```{r}
 ##Generating files to combine with mutation data. 
-#FYI you will need to run lines before running this section 36-40, 48-58, 175-195 
+#FYI you will need to run lines 36-40, 48-58, 170-190 to generate lines 232-284
 
 methylation_data_levels = methylation_data %>%
   mutate(Level = case_when(CpG_Value < 0.2 ~ 'low',
@@ -293,5 +289,38 @@ methylation_data_levels = methylation_data %>%
 VHL_data = methylation_data_levels %>%
   filter(Gene == "VHL") %>%
   na.omit()
-```
 
+
+```
+```{r}
+#meth$ENTITY_STABLE_ID <- row.names(meth) 
+
+install.packages("palmerpenguins")
+library(palmerpenguins)
+
+methylation_data = meth %>%
+  pivot_longer(TCGA.B0.5697:TCGA.DV.A4VZ, names_to = "Patient", values_to = "CpG_Value")
+
+bmi_data = bmi_data %>% 
+  rename(Patient = "name")%>%
+  na.omit()
+bmi_meth = inner_join(methylation_data, bmi_data, by = 'Patient')
+
+bmi_meth_results = bmi_meth %>%
+  mutate(methylation = case_when(CpG_Value < 0.2 ~ 'low',
+                          CpG_Value <= 0.5 ~ 'med',
+                          CpG_Value > 0.5 ~ 'high')) %>%
+  group_by(bmi, methylation) %>%
+  summarize(n = n(), mean = mean(CpG_Value)) %>%
+  na.omit()
+
+p <- ggplot(data=bmi_meth_results, aes(x=methylation, y=n, fill=bmi)) +
+geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme_minimal()
+
+p
+
+stats_meth = bmi_meth %>%
+  dplyr::select(bmi,CpG_Value)
+
+```
