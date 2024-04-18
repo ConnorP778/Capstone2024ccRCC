@@ -38,7 +38,7 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 1. Run MTDNA_CopyNumberAnalysis.Rmd with "base_dir" after downloading the Supplementary file 1.
 
 ### Methylation
-1. Run MethylGSA.Rmd with "base_dir"
+1. Run TIME_INTENSE_MethylGSA.Rmd with "base_dir"
 
 ### Figure 3 (iClusterBayes)
 1. Run Figure3.Rmd with "base_dir"
