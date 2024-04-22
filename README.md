@@ -40,11 +40,11 @@ Outputs, including plots and data, will either be printed out or saved in the "o
 ### Methylation
 1. Run TIME_INTENSE_MethylGSA.Rmd with "base_dir"
 
-### Figure 3 (iClusterBayes)
-1. Run Figure3.Rmd with "base_dir"
-
-### RPPA
+### Figure 3 (RPPA)
 1. Run "RPPA.R" with "base_dir"
+
+### Figure 4 (iClusterBayes)
+1. Run Figure3.Rmd with "base_dir"
 
 ### Mutation
 Navigate to the scripts/4.mutations directory and run each script, updating "base_dir" each time:
