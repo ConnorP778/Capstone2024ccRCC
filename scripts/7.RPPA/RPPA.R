@@ -5,6 +5,7 @@ BiocManager::install("limma")
 
 library(tidyverse)
 library(limma)
+library(ggrepel)
 
 # Change this to match your base directory
 base_dir <- "/Users/ConnorP778/repo/GitHub/Capstone2024ccRCC/"
@@ -64,12 +65,19 @@ de_proteins <- topTable(fit, coef = 1, n = Inf)
 
 de_proteins <- transform(de_proteins, Significance = ifelse(abs(logFC) > 1 & adj.P.Val < 0.05, "Significant", "Not Significant"))
 
+de_proteins = mutate(de_proteins, abs_logFC = abs(logFC)) %>%
+  arrange(desc(abs_logFC))
+
+de_proteins = rownames_to_column(de_proteins, var="row_names") %>%
+  separate(row_names, into=c("Gene", "Protein"), sep="\\|", convert=TRUE)
+
 # Volcano plot
 volcano = ggplot(de_proteins, aes(x = logFC, y = -log10(adj.P.Val))) +
   geom_point(size = 2, aes(color = Significance)) +
   scale_color_manual(values = c("black", "red")) +
   labs(x = "Log2 Fold Change", y = "-log10(Adjusted P-value)") +
-  theme_bw()
+  theme_bw() +
+  geom_text_repel(data=head(de_proteins, 25), aes(label=Protein), min.segment.length = 0)
 
 # Save the plot
 output_file <- paste0(base_dir, "Output/Plots/rppa_plot.png")
